@@ -36,6 +36,7 @@ namespace DIDA_LIBRARY.Tests
         [TestMethod()]
         public void EqualsWc()
         {
+
             List<object> _list = new List<object>();
             _list.Add("cat");
             _list.Add("white");
@@ -46,18 +47,62 @@ namespace DIDA_LIBRARY.Tests
             _f1.Add("*");
             Tuple _t1 = new Tuple(_f1);
             Assert.AreEqual(_tup, _t1);
+           
 
             _f1 = new List<object>();
             _f1.Add("cat");
             _f1.Add("w*");
             _t1 = new Tuple(_f1);
-            //Assert.AreEqual(_tup, _t1);
+            Assert.AreEqual(_tup, _t1);
 
             _f1 = new List<object>();
             _f1.Add("cat");
             _f1.Add("c*");
             _t1 = new Tuple(_f1);
-            //Assert.AreNotEqual(_tup, _t1);
+            Assert.AreNotEqual(_tup, _t1);
+
+            _f1 = new List<object>();
+            _f1.Add("cat");
+            _f1.Add("*c");
+            _t1 = new Tuple(_f1);
+            Assert.AreNotEqual(_tup, _t1);
+
+        }
+
+        [TestMethod()]
+        public void EqualsWc2()
+        {
+
+            List<object> _list = new List<object>();
+            _list.Add("white");
+            _list.Add("cat");
+            Tuple _tup = new Tuple(_list);
+
+            List<Object> _f1 = new List<object>();
+            _f1.Add("white");
+            _f1.Add("*");
+            Tuple _t1 = new Tuple(_f1);
+            Assert.AreEqual(_tup, _t1);
+
+
+            _f1 = new List<object>();
+            _f1.Add("white");
+            _f1.Add("ca*");
+            _t1 = new Tuple(_f1);
+            Assert.AreEqual(_tup, _t1);
+
+            _f1 = new List<object>();
+            _f1.Add("white");
+            _f1.Add("*t");
+            _t1 = new Tuple(_f1);
+            Assert.AreEqual(_tup, _t1);
+
+            _f1 = new List<object>();
+            _f1.Add("white");
+            _f1.Add("*ate");
+            _t1 = new Tuple(_f1);
+            Assert.AreNotEqual(_tup, _t1);
+
         }
 
         [TestMethod()]

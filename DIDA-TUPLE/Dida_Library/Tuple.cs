@@ -58,19 +58,19 @@ namespace DIDA_LIBRARY
 
         private bool WildComparator(string s1, string s2)
         {
-            System.Diagnostics.Trace.WriteLine(s1);
-            System.Diagnostics.Trace.WriteLine(s2);
+            
+            string regex;
 
             if (s1.StartsWith("*") || s1.EndsWith("*"))
             {
-                s1.Replace("*", ".*");
-                return Regex.IsMatch(s2, s1);
+                regex = s1.Replace("*", ".*");
+                return Regex.IsMatch(s2, regex);
             }
 
             if (s2.StartsWith("*") || s2.EndsWith("*"))
             {
-                s2.Replace("*", ".*");
-                return Regex.IsMatch(s1, s2);
+                regex = s2.Replace("*", ".*");
+                return Regex.IsMatch(s1, regex);
             }
 
             return s1.Equals(s2);
@@ -94,9 +94,10 @@ namespace DIDA_LIBRARY
                         {
                             if (WildComparator(this.GetFieldByNumber(i) as string, tuple.GetFieldByNumber(i) as string) == false)
                                 return false;
+                            
                         }
 
-                        if (!(this.GetFieldByNumber(i).Equals(tuple.GetFieldByNumber(i))))
+                        else if (!(this.GetFieldByNumber(i).Equals(tuple.GetFieldByNumber(i))))
                         {
                             return false;
                         }
