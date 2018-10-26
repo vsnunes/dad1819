@@ -58,6 +58,9 @@ namespace DIDA_LIBRARY
 
         private bool WildComparator(string s1, string s2)
         {
+            System.Diagnostics.Trace.WriteLine(s1);
+            System.Diagnostics.Trace.WriteLine(s2);
+
             if (s1.StartsWith("*") || s1.EndsWith("*"))
             {
                 s1.Replace("*", ".*");
@@ -89,7 +92,8 @@ namespace DIDA_LIBRARY
                         //to check for wildcards in strings
                         if (this.GetFieldByNumber(i).GetType() == typeof(string))
                         {
-                            return WildComparator(this.GetFieldByNumber(i) as string, tuple.GetFieldByNumber(i) as string);
+                            if (WildComparator(this.GetFieldByNumber(i) as string, tuple.GetFieldByNumber(i) as string) == false)
+                                return false;
                         }
 
                         if (!(this.GetFieldByNumber(i).Equals(tuple.GetFieldByNumber(i))))
