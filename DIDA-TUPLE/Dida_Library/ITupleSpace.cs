@@ -9,7 +9,7 @@ namespace DIDA_LIBRARY
     /// <summary>
     /// An interface for describing basic Tuple Spaces operations.
     /// </summary>
-    public interface TupleSpace
+    public interface ITupleSpace
     {
         /// <summary>
         /// Reads a tuple from the tuple space.
