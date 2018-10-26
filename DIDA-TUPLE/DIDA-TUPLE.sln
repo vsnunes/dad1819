@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-TUPLE-XL", "DIDA-TUPLE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-CLIENT", "DIDA-CLIENT\DIDA-CLIENT.csproj", "{D89D252A-30E1-41B3-8DE9-13531E5425C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA_LIBRARYTests", "DIDA_LIBRARYTests\DIDA_LIBRARYTests.csproj", "{D6463836-3BAD-4BF8-A8EB-3C36EA0A99DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{D89D252A-30E1-41B3-8DE9-13531E5425C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D89D252A-30E1-41B3-8DE9-13531E5425C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D89D252A-30E1-41B3-8DE9-13531E5425C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6463836-3BAD-4BF8-A8EB-3C36EA0A99DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6463836-3BAD-4BF8-A8EB-3C36EA0A99DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6463836-3BAD-4BF8-A8EB-3C36EA0A99DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6463836-3BAD-4BF8-A8EB-3C36EA0A99DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
