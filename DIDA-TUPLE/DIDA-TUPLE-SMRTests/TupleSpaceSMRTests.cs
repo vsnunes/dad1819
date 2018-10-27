@@ -6,12 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
+
 namespace DIDA_TUPLE_SMR.Tests
 {
     [TestClass()]
     public class TupleSpaceSMRTests
     {
-        //aqui mete as cenas comuns que precisas
+        List<Object> _fields;
+        List<Object> _fields2;
+        Tuple tuple1;
+        Tuple tuple2;
+        Tuple tuple3;
+
         [TestInitialize]
         public void TestInitialize()
         {
