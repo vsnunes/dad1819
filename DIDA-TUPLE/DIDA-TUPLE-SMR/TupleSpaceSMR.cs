@@ -19,6 +19,11 @@ namespace DIDA_TUPLE_SMR
             _tupleSpace = new List<Tuple>();
         }
 
+        public int ItemCount()
+        {
+            return _tupleSpace.Count();
+        }
+
         public Tuple read(Tuple tuple)
         {
             foreach(Tuple pos in _tupleSpace)
