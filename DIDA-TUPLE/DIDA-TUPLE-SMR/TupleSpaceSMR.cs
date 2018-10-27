@@ -9,7 +9,7 @@ using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_SMR
 {
-    public class TupleSpaceSMR : ITupleSpace
+    class TupleSpaceSMR : MarshalByRefObject, ITupleSpace
     {
         //Possibilidade de hashtable
         private List<Tuple> _tupleSpace;
@@ -43,10 +43,7 @@ namespace DIDA_TUPLE_SMR
 
         public void write(Tuple tuple)
         {
-            lock (this)
-            {
-                _tupleSpace.Add(tuple);
-            }
+            _tupleSpace.Add(tuple);
         }
     }
 }
