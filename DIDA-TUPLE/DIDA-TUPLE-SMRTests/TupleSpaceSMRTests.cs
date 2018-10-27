@@ -22,7 +22,8 @@ namespace DIDA_TUPLE_SMR.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-           
+            _fields = new List<Object>();
+            _fields2 = new List<Object>();
         }
         [TestMethod()]
         public void readTest()
@@ -33,7 +34,6 @@ namespace DIDA_TUPLE_SMR.Tests
         [TestMethod()]
         public void takeTest()
         {
-            _fields = new List<Object>();
             _fields.Add("cat");
             _fields.Add("white");
             _tuple1 = new Tuple(_fields);
@@ -54,10 +54,8 @@ namespace DIDA_TUPLE_SMR.Tests
         [TestMethod()]
         public void takeInexistantTupleTest()
         {
-            _fields = new List<Object>();
             _fields.Add("cat");
             _fields.Add("white");
-            _fields2 = new List<Object>();
             _fields2.Add("dog");
             _fields2.Add("brown");
             _tuple1 = new Tuple(_fields);
@@ -78,10 +76,8 @@ namespace DIDA_TUPLE_SMR.Tests
         [TestMethod()]
         public void takeUsingWildCardsTest()
         {
-            _fields = new List<Object>();
             _fields.Add("cat");
             _fields.Add("white");
-            _fields2 = new List<Object>();
             _fields2.Add("cat");
             _fields2.Add("*");
             _tuple1 = new Tuple(_fields);
