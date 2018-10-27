@@ -43,7 +43,10 @@ namespace DIDA_TUPLE_SMR
 
         public void write(Tuple tuple)
         {
-            _tupleSpace.Add(tuple);
+            lock (this)
+            {
+                _tupleSpace.Add(tuple);
+            }
         }
     }
 }
