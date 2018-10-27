@@ -23,7 +23,7 @@ namespace DIDA_LIBRARY
 
         public Object GetFieldByNumber(int n)
         {
-            if (n < this.GetNumberOfFields() - 1 | n < 0)
+            if (n >= 0 & n <= this.GetNumberOfFields() - 1)
             {
                 return _fields[n];
             }
