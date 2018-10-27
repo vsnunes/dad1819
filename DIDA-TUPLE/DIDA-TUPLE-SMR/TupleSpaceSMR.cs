@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,11 +12,11 @@ namespace DIDA_TUPLE_SMR
     class TupleSpaceSMR : ITupleSpace
     {
         //Possibilidade de hashtable
-        private ConcurrentBag<Tuple> _tupleSpace;
+        private List<Tuple> _tupleSpace;
 
         public TupleSpaceSMR()
         {
-            _tupleSpace = new ConcurrentBag<Tuple>();
+            _tupleSpace = new List<Tuple>();
         }
 
         public Tuple read(Tuple tuple)
@@ -31,9 +31,14 @@ namespace DIDA_TUPLE_SMR
             return null; //temos de incluir o hold para uma queue
         }
 
+        /// <summary>
+        /// Takes a tuple from the tuple space.
+        /// </summary>
+        /// <param name="tuple">The tuple to be taken.</param>
+        /// <returns></returns>
         public Tuple take(Tuple tuple)
-        {
-            throw new NotImplementedException();
+        {         
+            return null;
         }
 
         public void write(Tuple tuple)
