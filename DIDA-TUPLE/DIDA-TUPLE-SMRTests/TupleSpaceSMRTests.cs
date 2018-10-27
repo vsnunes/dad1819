@@ -17,11 +17,13 @@ namespace DIDA_TUPLE_SMR.Tests
         Tuple tuple1;
         Tuple tuple2;
         Tuple tuple3;
+        TupleSpaceSMR ts1;
 
         [TestInitialize]
         public void TestInitialize()
         {
-           
+            _fields = new List<object>();
+
         }
         [TestMethod()]
         public void readTest()
@@ -38,7 +40,7 @@ namespace DIDA_TUPLE_SMR.Tests
         [TestMethod()]
         public void writeTest()
         {
-            Assert.Fail();
+            
         }
     }
 }
