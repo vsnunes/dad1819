@@ -9,10 +9,10 @@ using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_SMR
 {
-    class TupleSpaceSMR : MarshalByRefObject, ITupleSpace
+    public class TupleSpaceSMR : MarshalByRefObject, ITupleSpace
     {
         //Possibilidade de hashtable
-        private List<Tuple> _tupleSpace;
+        private List<Tuple> _tupleSpace; 
 
         public TupleSpaceSMR()
         {
@@ -30,7 +30,10 @@ namespace DIDA_TUPLE_SMR
             }
             return null; //temos de incluir o hold para uma queue
         }
-
+        public List<Tuple> GetTuples()
+        {
+            return _tupleSpace;
+        }
         /// <summary>
         /// Takes a tuple from the tuple space.
         /// </summary>
