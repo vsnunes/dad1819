@@ -69,25 +69,30 @@ namespace DIDA_TUPLE_SMR
         /// <returns></returns>
         public Tuple take(Tuple tuple)
         {
-            Tuple match = null;
+            Tuple result = null;
 
-            foreach (Tuple t in _tupleSpace)
+            while (result == null)
             {
-                if (t.Equals(tuple))
+                lock (this)
                 {
-                    match = t;
-                    break; //just found one so no need to continue searching
+                    foreach (Tuple t in _tupleSpace)
+                    {
+                        if (t.Equals(tuple))
+                        {
+                            result = t;
+                            break; //just found one so no need to continue searching
+                        }
+                    }
+                    if (result == null) //stil has not find any match
+                        Monitor.Wait(this);
+                    
+                    //we are with the lock already so lets remove the element
+                    else _tupleSpace.Remove(result);
                 }
             }
 
-            if (match != null)
-            {
-                lock (this) { _tupleSpace.Remove(match); }
-                return match;
-            }
-
-            //not found 
-            return null; 
+            return result;
+            
         }
 
         public void write(Tuple tuple)

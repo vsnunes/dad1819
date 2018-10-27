@@ -56,8 +56,12 @@ namespace DIDA_TUPLE_SMR.Tests
             Assert.AreEqual(0, _tupleSpaceSMR.ItemCount());
         }
 
+        /// <summary>
+        /// A test to check for thread waitness of take.
+        /// This is a multithreading test.
+        /// </summary>
         [TestMethod()]
-        public void takeInexistantTupleTest()
+        public void takeNotAvailableTest()
         {
             _fields.Add("cat");
             _fields.Add("white");
@@ -70,9 +74,22 @@ namespace DIDA_TUPLE_SMR.Tests
             //write <cat,white>
             _tupleSpaceSMR.write(_tuple1);
             Assert.AreEqual(1, _tupleSpaceSMR.ItemCount());
-            //take <dog, brown> which will not exists!
+
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //lets delay the write in 1 second
+                Thread.Sleep(1000);
+                _tupleSpaceSMR.write(_tuple2);
+                return; //just to ensure that we stop the thread
+            });
+
+            Assert.AreEqual(1, _tupleSpaceSMR.ItemCount());
+            //take <dog, brown> which will only exists 1 sec ahead!
             _tupleSpaceSMR.take(_tuple2);
 
+            //Even if we add <dog, brown> take operation will remove it so
+            //only <cat,white> should exists!
             Assert.AreEqual(1, _tupleSpaceSMR.ItemCount());
         }
 
