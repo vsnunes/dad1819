@@ -9,7 +9,7 @@ using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_SMR
 {
-    class TupleSpaceSMR : MarshalByRefObject, ITupleSpace
+    public class TupleSpaceSMR : MarshalByRefObject, ITupleSpace
     {
         //Possibilidade de hashtable
         private List<Tuple> _tupleSpace;
