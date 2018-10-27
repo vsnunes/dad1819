@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
@@ -26,14 +27,26 @@ namespace DIDA_TUPLE_SMR
 
         public Tuple read(Tuple tuple)
         {
-            foreach(Tuple pos in _tupleSpace)
+            Tuple result = null;
+
+            while (result == null)
             {
-                if (pos.Equals(tuple))
+                lock (this)
                 {
-                    return pos;
+                    foreach (Tuple t in _tupleSpace)
+                    {
+                        if (t.Equals(tuple))
+                        {
+                            result = t;
+                            break; //just found one so no need to continue searching
+                        }
+                    }
+                    if (result == null) //stil has not find any match
+                        Monitor.Wait(this);
                 }
-            }
-            return null; //temos de incluir o hold para uma queue
+            }    
+            
+            return result; 
         }
         public List<Tuple> GetTuples()
         {
@@ -69,7 +82,10 @@ namespace DIDA_TUPLE_SMR
 
         public void write(Tuple tuple)
         {
-            lock (this) { _tupleSpace.Add(tuple); }
+            //If any thread is waiting for read or take
+            //notify them to check if this tuple match its requirements
+            lock (this) { _tupleSpace.Add(tuple); Monitor.Pulse(this); }
+            
         }
     }
 }

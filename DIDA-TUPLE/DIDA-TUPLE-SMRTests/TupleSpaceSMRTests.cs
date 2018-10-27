@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_SMR.Tests
@@ -29,6 +30,7 @@ namespace DIDA_TUPLE_SMR.Tests
             _fields2 = new List<Object>();
             _fields3 = new List<Object>();
             _fields4 = new List<Object>();
+            _tupleSpaceSMR = new TupleSpaceSMR();
         }
         [TestMethod()]
         public void readTest()
@@ -42,8 +44,6 @@ namespace DIDA_TUPLE_SMR.Tests
             _fields.Add("cat");
             _fields.Add("white");
             _tuple1 = new Tuple(_fields);
-
-            _tupleSpaceSMR = new TupleSpaceSMR();
 
             Assert.AreEqual(0, _tupleSpaceSMR.ItemCount());
 
@@ -66,8 +66,6 @@ namespace DIDA_TUPLE_SMR.Tests
             _tuple1 = new Tuple(_fields);
             _tuple2 = new Tuple(_fields2);
 
-            _tupleSpaceSMR = new TupleSpaceSMR();
-
             Assert.AreEqual(0, _tupleSpaceSMR.ItemCount());
             //write <cat,white>
             _tupleSpaceSMR.write(_tuple1);
@@ -87,8 +85,6 @@ namespace DIDA_TUPLE_SMR.Tests
             _fields2.Add("*");
             _tuple1 = new Tuple(_fields);
             _tuple2 = new Tuple(_fields2);
-
-            _tupleSpaceSMR = new TupleSpaceSMR();
 
             Assert.AreEqual(0, _tupleSpaceSMR.ItemCount());
             //write <cat,white>
@@ -118,8 +114,6 @@ namespace DIDA_TUPLE_SMR.Tests
             _tuple3 = new Tuple(_fields3);
             _tuple4 = new Tuple(_fields4);
 
-            _tupleSpaceSMR = new TupleSpaceSMR();
-
             //write <cat,white>
             _tupleSpaceSMR.write(_tuple1);
             //write <cat,gray>
@@ -144,10 +138,9 @@ namespace DIDA_TUPLE_SMR.Tests
             _fields = new List<object>();
             _fields.Add("dog");
             _fields.Add("brown");
-            TupleSpaceSMR ts1 = new TupleSpaceSMR();
             Tuple tuple1 = new Tuple(_fields);
-            ts1.write(tuple1);
-            List<Tuple> tlist = ts1.GetTuples();
+            _tupleSpaceSMR.write(tuple1);
+            List<Tuple> tlist = _tupleSpaceSMR.GetTuples();
 
 
             List<Tuple> testtlist = new List<Tuple>();
@@ -168,6 +161,38 @@ namespace DIDA_TUPLE_SMR.Tests
                 }
 
             }
+        }
+
+        /// <summary>
+        /// A test to check for thread waitness of read.
+        /// This is a multithreading test.
+        /// </summary>
+        [TestMethod()]
+        public void readNotAvailableTest()
+        {
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+            Tuple readTuple = null;
+
+            Assert.AreEqual(0, _tupleSpaceSMR.ItemCount());
+            Assert.AreEqual(null, readTuple);
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //lets delay the write in 1 second
+                Thread.Sleep(1000);
+                _tupleSpaceSMR.write(_tuple1);
+                return; //just to ensure that we stop the thread
+            });
+
+            Assert.AreEqual(0, _tupleSpaceSMR.ItemCount());
+
+            //current thread will be blocked here 1 second until write.
+            readTuple = _tupleSpaceSMR.read(_tuple1);
+
+            Assert.AreEqual(1, _tupleSpaceSMR.ItemCount());
+            Assert.AreEqual(_tuple1, readTuple);
         }
     }
 }
