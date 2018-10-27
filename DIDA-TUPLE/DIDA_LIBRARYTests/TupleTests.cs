@@ -112,6 +112,20 @@ namespace DIDA_LIBRARY.Tests
         }
 
         [TestMethod()]
+        [ExpectedException(typeof(IndexOutOfRangeException))]
+        public void InvalidNumberUnderGetFieldByNumber()
+        {
+            tuple1.GetFieldByNumber(-1);
+        }
+
+        [TestMethod()]
+        [ExpectedException(typeof(IndexOutOfRangeException))]
+        public void InvalidNumberOverGetFieldByNumber()
+        {
+            tuple1.GetFieldByNumber(3);
+        }
+
+        [TestMethod()]
         public void GetFieldByNumber()
         {
             Assert.AreEqual(tuple1.GetFieldByNumber(0), "dog");

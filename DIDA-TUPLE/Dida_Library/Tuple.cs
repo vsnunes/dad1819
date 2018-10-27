@@ -23,7 +23,11 @@ namespace DIDA_LIBRARY
 
         public Object GetFieldByNumber(int n)
         {
-            return _fields[n];
+            if (n < this.GetNumberOfFields() - 1 | n < 0)
+            {
+                return _fields[n];
+            }
+            else throw new IndexOutOfRangeException();
         }
 
         public int GetNumberOfFields()
