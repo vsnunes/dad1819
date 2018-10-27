@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
 
-namespace DIDA_TUPLE_SMR
+namespace DIDA_TUPLE_XL
 {
-    public class TupleSpaceSMR : MarshalByRefObject, ITupleSpace
+    public class TupleSpaceXL : MarshalByRefObject, ITupleSpace
     {
         //Possibilidade de hashtable
-        private List<Tuple> _tupleSpace; 
+        private List<Tuple> _tupleSpace;
 
-        public TupleSpaceSMR()
+        public TupleSpaceXL()
         {
             _tupleSpace = new List<Tuple>();
         }
@@ -26,7 +26,7 @@ namespace DIDA_TUPLE_SMR
 
         public Tuple read(Tuple tuple)
         {
-            foreach(Tuple pos in _tupleSpace)
+            foreach (Tuple pos in _tupleSpace)
             {
                 if (pos.Equals(tuple))
                 {
@@ -35,10 +35,7 @@ namespace DIDA_TUPLE_SMR
             }
             return null; //temos de incluir o hold para uma queue
         }
-        public List<Tuple> GetTuples()
-        {
-            return _tupleSpace;
-        }
+
         /// <summary>
         /// Takes a tuple from the tuple space.
         /// </summary>
@@ -64,7 +61,7 @@ namespace DIDA_TUPLE_SMR
             }
 
             //not found 
-            return null; 
+            return null;
         }
 
         public void write(Tuple tuple)

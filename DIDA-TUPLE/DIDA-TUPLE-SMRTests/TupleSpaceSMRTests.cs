@@ -54,18 +54,18 @@ namespace DIDA_TUPLE_SMR.Tests
             List<Object> testolist;
             List<Object> test;
 
-            for(int i = 0; i < tlist.Count(); i++)
+            for (int i = 0; i < tlist.Count(); i++)
             {
                 test = tlist.ElementAt(i).GetAllFields();
                 testolist = testtlist.ElementAt(i).GetAllFields();
-                if(test.Count() == testolist.Count())
+                if (test.Count() == testolist.Count())
                 {
-                    for(int k = 0; k < test.Count(); k++)
+                    for (int k = 0; k < test.Count(); k++)
                     {
                         Assert.IsTrue(test.ElementAt(k).Equals(testolist.ElementAt(k)));
                     }
                 }
-                
+
             }
         }
     }

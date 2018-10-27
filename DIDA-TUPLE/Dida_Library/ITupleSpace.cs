@@ -30,5 +30,11 @@ namespace DIDA_LIBRARY
         /// <param name="tuple">A tuple to take.</param>
         /// <returns>A taple matching the param.</returns>
         Tuple take(Tuple tuple);
+
+        /// <summary>
+        /// Gets the number of itens in the tupple space.
+        /// </summary>
+        /// <returns></returns>
+        int ItemCount();
     }
 }
