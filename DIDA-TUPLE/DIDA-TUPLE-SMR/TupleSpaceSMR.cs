@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
 
@@ -24,17 +25,24 @@ namespace DIDA_TUPLE_SMR
             return _tupleSpace.Count();
         }
 
+
         public Tuple read(Tuple tuple)
         {
-            foreach(Tuple pos in _tupleSpace)
-            {
-                if (pos.Equals(tuple))
-                {
-                    return pos;
+            Task<Tuple> task = Task<Tuple>.Factory.StartNew(() => 
+            { 
+                foreach (Tuple pos in _tupleSpace)
+                {   
+                    if (pos.Equals(tuple))
+                    {
+                        return pos;
+                    }
                 }
-            }
-            return null; //temos de incluir o hold para uma queue
+                return null; //temos de incluir o hold para uma queue
+            });
+
+            return task.Result;
         }
+
         public List<Tuple> GetTuples()
         {
             return _tupleSpace;
