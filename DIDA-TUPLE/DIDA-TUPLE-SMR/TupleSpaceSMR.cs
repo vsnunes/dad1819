@@ -37,8 +37,26 @@ namespace DIDA_TUPLE_SMR
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
         public Tuple take(Tuple tuple)
-        {         
-            return null;
+        {
+            Tuple match = null;
+
+            foreach (Tuple t in _tupleSpace)
+            {
+                if (t.Equals(tuple))
+                {
+                    match = t;
+                    break; //just found one so no need to continue searching
+                }
+            }
+
+            if (match != null)
+            {
+                lock (this) { _tupleSpace.Remove(match); }
+                return match;
+            }
+
+            //not found 
+            return null; 
         }
 
         public void write(Tuple tuple)
