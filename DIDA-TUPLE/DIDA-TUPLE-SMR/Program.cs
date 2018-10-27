@@ -21,7 +21,7 @@ namespace DIDA_TUPLE_SMR
                 "DIDA-TUPLE-SMR",
                 WellKnownObjectMode.Singleton);
 
-            System.Console.WriteLine("Server Started!");
+            System.Console.WriteLine("DIDA-TUPLE-SMR Server Started!");
             System.Console.WriteLine("---------------");
             System.Console.WriteLine("<Enter> to exit...");
             System.Console.ReadLine();
