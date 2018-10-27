@@ -5,8 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-
+using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_SMR.Tests
 {
