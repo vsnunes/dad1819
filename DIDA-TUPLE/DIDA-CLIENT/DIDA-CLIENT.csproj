@@ -49,5 +49,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dida_Library\DIDA_LIBRARY.csproj">
+      <Project>{6680cb89-a4a8-42ed-be0b-c9745ae8f7cb}</Project>
+      <Name>DIDA_LIBRARY</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

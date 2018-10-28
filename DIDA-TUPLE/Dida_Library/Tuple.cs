@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace DIDA_LIBRARY
 {
+    [Serializable]
     public class Tuple
     {
         private List<Object> _fields;

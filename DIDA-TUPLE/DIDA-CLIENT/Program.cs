@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DIDA_LIBRARY;
+using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_CLIENT
 {
@@ -10,6 +12,26 @@ namespace DIDA_CLIENT
     {
         static void Main(string[] args)
         {
+            ITupleSpace server = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), "tcp://localhost:8086/DIDA-TUPLE-SMR");
+            List<Object> fields = new List<Object>();
+            fields.Add("cat");
+            fields.Add("white");
+            Tuple t = new Tuple(fields);
+
+            if (args.Count() == 0)
+            {
+                Console.WriteLine("Client will take now ...");
+                server.take(t);
+                Console.WriteLine("Client take returned!");
+            }
+            else
+            {
+                Console.WriteLine("Client will write now ...");
+                server.write(t);
+                Console.WriteLine("Client write returned!");
+            }
+            
+            Console.ReadLine();
         }
     }
 }
