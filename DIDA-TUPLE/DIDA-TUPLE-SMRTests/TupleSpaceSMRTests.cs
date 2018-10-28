@@ -35,7 +35,17 @@ namespace DIDA_TUPLE_SMR.Tests
         [TestMethod()]
         public void readTest()
         {
-            //Assert.Fail();
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+            _tupleSpaceSMR.write(_tuple1);
+            Assert.AreEqual(1, _tupleSpaceSMR.ItemCount());
+            _tupleSpaceSMR.read(_tuple1);
+            Assert.AreEqual(1, _tupleSpaceSMR.ItemCount());
+            for(int i = 0; i < _tuple1.GetNumberOfFields(); i++)
+            {
+                Assert.IsTrue(_tuple1.GetFieldByNumber(i).Equals(_tupleSpaceSMR.GetTuples().ElementAt(0).GetFieldByNumber(i)));
+            }
         }
 
         [TestMethod()]
