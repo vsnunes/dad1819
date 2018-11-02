@@ -28,31 +28,28 @@ namespace DIDA_TUPLE_SMR
 
         public Tuple read(Tuple tuple)
         {
-             Task<Tuple> task = Task<Tuple>.Factory.StartNew(() => 
-            { 
-                Tuple result = null;
-
-                while (result == null)
-                {
-                    lock (this)
-                    {
-                        foreach (Tuple t in _tupleSpace)
-                        {
-                            if (t.Equals(tuple))
-                            {
-                                result = t;
-                                break; //just found one so no need to continue searching
-                            }
-                        }
-                        if (result == null) //stil has not find any match
-                            Monitor.Wait(this);
-                    }
-                }    
             
-                return result; 
-            });
+            Tuple result = null;
 
-            return task.Result;
+            while (result == null)
+            {
+                lock (this)
+                {
+                    foreach (Tuple t in _tupleSpace)
+                    {
+                        if (t.Equals(tuple))
+                        {
+                            result = t;
+                            break; //just found one so no need to continue searching
+                        }
+                    }
+                    if (result == null) //stil has not find any match
+                        Monitor.Wait(this);
+                }
+            }    
+            
+            return result; 
+            
 
 
         }
