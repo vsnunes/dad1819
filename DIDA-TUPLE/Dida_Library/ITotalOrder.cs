@@ -16,5 +16,7 @@ namespace DIDA_LIBRARY
 
         void commit(int id, Request.OperationType request, Tuple tuple);
 
+        bool areYouTheMaster();
+
     }
 }
