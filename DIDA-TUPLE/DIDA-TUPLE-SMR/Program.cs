@@ -55,17 +55,35 @@ namespace DIDA_TUPLE_SMR
             }
 
             string pathMaster = "";
+            bool logUpdated = false;
+
+            Console.WriteLine(server.Log);
 
             foreach (string serverPath in servers) {
                 try
                 {
                     ITotalOrder remoteServer = (ITotalOrder)Activator.GetObject(typeof(ITotalOrder), serverPath);
+
+                    if (logUpdated == false)
+                    {
+                        //when the server start running fetch from one server the log
+                        //so i can sync my tuple space
+                        server.Log = remoteServer.fetchLog();
+                        Console.WriteLine(server.Log);
+                        //execute by order operation in that log
+                        server.executeLog();
+
+                        logUpdated = true;
+                        
+                    }
+
                     if (remoteServer.areYouTheMaster("tcp://localhost:" + args[0] + "/DIDA-TUPLE-SMR"))
                     {
                         pathMaster = serverPath;
                         server.MasterPath = pathMaster;
                         break;
                     }
+
                 }
                 catch (Exception) {
                     Console.WriteLine("Failed reaching " + serverPath);

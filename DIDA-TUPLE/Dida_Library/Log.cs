@@ -18,24 +18,33 @@ namespace DIDA_LIBRARY
 
         public int Counter { get => _counter; }
 
+        public List<Request> Requests { get => _requests; }
+
         public void Increment(){
             _counter++;
         }
 
         public void Add(int requestId, Request.OperationType operationId, Tuple tuple, bool master){
-            _requests.Add(new Request(requestId, operationId, tuple));
-            if (master){
-                _counter++;
-            }
+            Requests.Add(new Request(requestId, operationId, tuple));
         }
         
         public void Remove(int requestId){
-            for(int i = 0; i < _requests.Count(); i++){
-                if (_requests.ElementAt(i).RequestId == requestId){
-                    _requests.RemoveAt(i);
+            for(int i = 0; i < Requests.Count(); i++){
+                if (Requests.ElementAt(i).RequestId == requestId){
+                    Requests.RemoveAt(i);
                 }
             }
         }
+
+        public override string ToString()
+        {
+            string repr = "BEGIN LOG \n";
+            foreach (Request request in _requests){
+                repr += request.ToString();
+            }
+            repr += "END LOG\n";
+            return repr;
+        } 
 
 
     }

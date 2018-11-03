@@ -12,8 +12,6 @@ namespace DIDA_LIBRARY
     public interface ITotalOrder
     {
         
-        void prepare(int id, Request.OperationType request, Tuple tuple);
-
         void commit(int id, Request.OperationType request, Tuple tuple);
 
         bool areYouTheMaster(string serverPath);
@@ -23,6 +21,8 @@ namespace DIDA_LIBRARY
         void imAlive();
 
         void setBackup(string masterPath);
+
+        Log fetchLog();
 
     }
 }

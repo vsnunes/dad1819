@@ -51,7 +51,7 @@ namespace DIDA_TUPLE_SMR
         public string MyPath { get => _myPath; set => _myPath = value; }
 
         public string MasterPath {set => _masterPath = value; }
-       
+        public Log Log { get => _log; set => _log = value; }
 
         public TupleSpaceSMR()
         {
@@ -109,7 +109,31 @@ namespace DIDA_TUPLE_SMR
         {
             return _tupleSpace;
         }
-            
+        
+        /// <summary>
+        /// Returns my log containing all operations performed
+        /// </summary>
+        /// <returns></returns>
+        public Log fetchLog(){
+            return _log;
+        }
+
+        public void executeLog(){
+            List<Request> _requests = new List<Request>();
+            _requests = _log.Requests;
+
+            foreach(Request request in _requests){
+                if(request.OperationId == Request.OperationType.WRITE)
+                {
+                    executeWrite(request.Tuple, false);
+                }
+                else if(request.OperationId == Request.OperationType.TAKE)
+                {
+                    executeTake(request.Tuple, false);
+                }
+            }
+        }
+
         /// <summary>
         /// Takes a tuple from the tuple space.
         /// </summary>
@@ -123,22 +147,7 @@ namespace DIDA_TUPLE_SMR
             }
             else
             {
-                //Execute prepare on all replics.
-                //Remeber: prepare tell server to get ready to perfom an operation
-                foreach (string path in _servers)
-                {
-                    try
-                    {
-                        TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
-                        replic.prepare(_log.Counter, Request.OperationType.TAKE, tuple);
-                        Console.WriteLine("** TAKE: Successfuly prepared server at " + path);
-                    }
-                    catch (Exception)
-                    {
-                        Console.WriteLine("** TAKE: Failed to prepare server at " + path);
-                    }
-                }
-
+               
                 //When all servers are ready perfome the commit and
                 //everyone will execute the prepared instruction at the same order.
                 foreach (string path in _servers)
@@ -155,8 +164,6 @@ namespace DIDA_TUPLE_SMR
                     }
                 }
 
-                _log.Increment();
-
                 //performs the take on master
                 return this.executeTake(tuple);
             }
@@ -164,7 +171,7 @@ namespace DIDA_TUPLE_SMR
 
         }
 
-        private Tuple executeTake(Tuple tuple){
+        private Tuple executeTake(Tuple tuple, bool writeOnLog=true){
             Tuple result = null;
             while (result == null)
             {
@@ -183,6 +190,12 @@ namespace DIDA_TUPLE_SMR
                          
                     //we are with the lock already so lets remove the element
                     else _tupleSpace.Remove(result);
+
+                    if (writeOnLog)
+                    {
+                        _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
+                        _log.Increment();
+                    }
                 }
             }
             Console.WriteLine("** EXECUTE_TAKE: " + tuple);
@@ -198,22 +211,7 @@ namespace DIDA_TUPLE_SMR
             }
             else
             {
-                //Execute prepare on all replics.
-                //Remeber: prepare tell server to get ready to perfom an operation
-                foreach (string path in _servers)
-                {
-                    try
-                    {
-                        TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
-                        replic.prepare(_log.Counter, Request.OperationType.WRITE, tuple);
-                        Console.WriteLine("** WRITE: Successfuly prepared server at " + path);
-                    }
-                    catch (Exception)
-                    {
-                        Console.WriteLine("** WRITE: Failed to prepare server at " + path);
-                    }
-                }
-
+                
                 //When all servers are ready perfome the commit and
                 //everyone will execute the prepared instruction at the same order.
                 foreach (string path in _servers)
@@ -230,19 +228,24 @@ namespace DIDA_TUPLE_SMR
                     }
                 }
 
-
-                _log.Increment();
-
                 //performs the write on master
                 this.executeWrite(tuple);
             }
         }
 
-        private void executeWrite(Tuple tuple)
+        private void executeWrite(Tuple tuple, bool writeOnLog=true)
         {
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
-            lock (this) { _tupleSpace.Add(tuple); Monitor.Pulse(this); }
+            lock (this) {
+                _tupleSpace.Add(tuple);
+                if (writeOnLog)
+                {
+                    _log.Add(_log.Counter, Request.OperationType.WRITE, tuple, _type == Type.MASTER);
+                    _log.Increment();
+                }
+               
+                Monitor.Pulse(this); }
             Console.WriteLine("** EXECUTE_WRITE: " + tuple);
         }
 
@@ -271,28 +274,8 @@ namespace DIDA_TUPLE_SMR
 
                         break;
 
-
+                        
                 }
-
-                //already commited changes so remove them from the log.
-                _log.Remove(id);
-
-            }
-
-        }
-
-        /// <summary>
-        /// Get ready for a collective commit order by the MASTER.
-        /// </summary>
-        /// <param name="id">Identifier of request.</param>
-        /// <param name="request">Type of request.</param>
-        /// <param name="Tuple">A tuple to be passed to the request operation.</param>
-        /// <returns></returns>
-        public void prepare(int id, Request.OperationType request, Tuple tuple)
-        {
-            lock (this)
-            {
-                _log.Add(id, request, tuple, _type == Type.MASTER);
             }
 
         }

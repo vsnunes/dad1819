@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +13,35 @@ namespace DIDA_CLIENT
     {
         static void Main(string[] args)
         {
-            ITupleSpace server = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), "tcp://localhost:8088/DIDA-TUPLE-SMR");
+            List<string> servers = new List<string>();
+
+            string[] file = File.ReadAllLines("../../serverList.txt");
+
+            foreach (string i in file)
+            {
+                servers.Add(i);
+            }
+
+            List<ITupleSpace> serversObj = new List<ITupleSpace>();
+
+
+            foreach (string serverPath in servers)
+            {
+                try
+                {
+                    serversObj.Add((ITupleSpace)Activator.GetObject(typeof(ITupleSpace), serverPath));
+                    
+                }
+                catch (Exception) { }
+            }
+                
+            if(serversObj.Count() == 0)
+            {
+                Console.WriteLine("No servers available!");
+                System.Environment.Exit(1);
+            }
+
+
             List<Object> fields = new List<Object>();
             fields.Add("cat");
             fields.Add("white");
