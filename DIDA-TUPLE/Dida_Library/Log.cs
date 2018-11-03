@@ -9,17 +9,23 @@ namespace DIDA_LIBRARY
     [Serializable]
     public class Log
     {
-        public int counter = 0;
+        private int _counter = 0;
         private List<Request> _requests;
 
         public Log(){
             _requests = new List<Request>();
         }
-    
+
+        public int Counter { get => _counter; }
+
+        public void Increment(){
+            _counter++;
+        }
+
         public void Add(int requestId, Request.OperationType operationId, Tuple tuple, bool master){
             _requests.Add(new Request(requestId, operationId, tuple));
             if (master){
-                counter++;
+                _counter++;
             }
         }
         
@@ -30,6 +36,7 @@ namespace DIDA_LIBRARY
                 }
             }
         }
+
 
     }
 }

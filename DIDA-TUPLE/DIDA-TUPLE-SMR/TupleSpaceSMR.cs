@@ -61,6 +61,7 @@ namespace DIDA_TUPLE_SMR
             _firstReplica = true;
             _backup = "";
             _myPath = "";
+            _servers = new List<string>();
         }
 
         
@@ -108,6 +109,7 @@ namespace DIDA_TUPLE_SMR
         {
             return _tupleSpace;
         }
+            
         /// <summary>
         /// Takes a tuple from the tuple space.
         /// </summary>
@@ -115,8 +117,55 @@ namespace DIDA_TUPLE_SMR
         /// <returns></returns>
         public Tuple take(Tuple tuple)
         {
-            Tuple result = null;
+            if (_type != Type.MASTER)
+            {
+                return null;
+            }
+            else
+            {
+                //Execute prepare on all replics.
+                //Remeber: prepare tell server to get ready to perfom an operation
+                foreach (string path in _servers)
+                {
+                    try
+                    {
+                        TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
+                        replic.prepare(_log.Counter, Request.OperationType.TAKE, tuple);
+                        Console.WriteLine("** TAKE: Successfuly prepared server at " + path);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("** TAKE: Failed to prepare server at " + path);
+                    }
+                }
 
+                //When all servers are ready perfome the commit and
+                //everyone will execute the prepared instruction at the same order.
+                foreach (string path in _servers)
+                {
+                    try
+                    {
+                        TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
+                        replic.commit(_log.Counter, Request.OperationType.TAKE, tuple);
+                        Console.WriteLine("** TAKE: Successfuly commited server at " + path);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("** TAKE: Failed to commit server at " + path);
+                    }
+                }
+
+                _log.Increment();
+
+                //performs the take on master
+                return this.executeTake(tuple);
+            }
+
+
+        }
+
+        private Tuple executeTake(Tuple tuple){
+            Tuple result = null;
             while (result == null)
             {
                 lock (this)
@@ -131,22 +180,70 @@ namespace DIDA_TUPLE_SMR
                     }
                     if (result == null) //stil has not find any match
                         Monitor.Wait(this);
-                    
+                         
                     //we are with the lock already so lets remove the element
                     else _tupleSpace.Remove(result);
                 }
             }
-
+            Console.WriteLine("** EXECUTE_TAKE: " + tuple);
             return result;
             
         }
 
         public void write(Tuple tuple)
         {
+            if (_type != Type.MASTER)
+            {
+                return;
+            }
+            else
+            {
+                //Execute prepare on all replics.
+                //Remeber: prepare tell server to get ready to perfom an operation
+                foreach (string path in _servers)
+                {
+                    try
+                    {
+                        TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
+                        replic.prepare(_log.Counter, Request.OperationType.WRITE, tuple);
+                        Console.WriteLine("** WRITE: Successfuly prepared server at " + path);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("** WRITE: Failed to prepare server at " + path);
+                    }
+                }
+
+                //When all servers are ready perfome the commit and
+                //everyone will execute the prepared instruction at the same order.
+                foreach (string path in _servers)
+                {
+                    try
+                    {
+                        TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
+                        replic.commit(_log.Counter, Request.OperationType.WRITE, tuple);
+                        Console.WriteLine("** WRITE: Successfuly commited server at " + path);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("** WRITE: Failed to commit server at " + path);
+                    }
+                }
+
+
+                _log.Increment();
+
+                //performs the write on master
+                this.executeWrite(tuple);
+            }
+        }
+
+        private void executeWrite(Tuple tuple)
+        {
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
             lock (this) { _tupleSpace.Add(tuple); Monitor.Pulse(this); }
-            
+            Console.WriteLine("** EXECUTE_WRITE: " + tuple);
         }
 
         /// <summary>
@@ -164,13 +261,13 @@ namespace DIDA_TUPLE_SMR
                 {
                     case Request.OperationType.WRITE:
 
-                        this.write(tuple);
+                        this.executeWrite(tuple);
 
 
                         break;
 
                     case Request.OperationType.TAKE:
-                        this.take(tuple);
+                        this.executeTake(tuple);
 
                         break;
 
@@ -197,6 +294,7 @@ namespace DIDA_TUPLE_SMR
             {
                 _log.Add(id, request, tuple, _type == Type.MASTER);
             }
+
         }
 
         public bool areYouTheMaster(string serverPath) {
@@ -275,6 +373,8 @@ namespace DIDA_TUPLE_SMR
                 
                 return; //just to ensure that we stop the thread
             });
+
+            Console.WriteLine("** SETBACKUP: Is about to finish!");
         }
 
         //Ping        

@@ -31,6 +31,7 @@ namespace DIDA_TUPLE_SMR.Tests
             _fields3 = new List<Object>();
             _fields4 = new List<Object>();
             _tupleSpaceSMR = new TupleSpaceSMR();
+            _tupleSpaceSMR.setIAmTheMaster(); //just for testing logic
         }
         [TestMethod()]
         public void readTest()

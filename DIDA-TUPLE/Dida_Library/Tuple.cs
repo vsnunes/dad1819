@@ -112,5 +112,23 @@ namespace DIDA_LIBRARY
             }
             return false;
         }
+    
+        public override string ToString()
+        {
+            string repr = "<" ;
+            List<Object> fields = this.GetAllFields();
+            for (int i = 0; i < fields.Count() - 1; i++)
+            {
+                repr += fields[i].ToString() + ", ";
+            }
+            if (fields.Count() != 0)
+            {
+                repr += fields[fields.Count() - 1];   
+            }
+
+            repr += ">";
+            return repr;
+        }
+
     }
 }
