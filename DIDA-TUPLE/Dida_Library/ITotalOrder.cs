@@ -16,7 +16,13 @@ namespace DIDA_LIBRARY
 
         void commit(int id, Request.OperationType request, Tuple tuple);
 
-        bool areYouTheMaster();
+        bool areYouTheMaster(string serverPath);
+
+        void setNewMaster(string pathNewMaster);
+
+        void imAlive();
+
+        void setBackup(string masterPath);
 
     }
 }

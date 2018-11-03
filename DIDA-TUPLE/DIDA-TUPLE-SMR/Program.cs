@@ -28,10 +28,10 @@ namespace DIDA_TUPLE_SMR
             
             ChannelServices.RegisterChannel(channel, false);
 
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(TupleSpaceSMR),
-                "DIDA-TUPLE-SMR",
-                WellKnownObjectMode.Singleton);
+            TupleSpaceSMR server = new TupleSpaceSMR();
+            server.MyPath = "tcp://localhost:" + args[0] + "/DIDA-TUPLE-SMR";
+
+            RemotingServices.Marshal(server, "DIDA-TUPLE-SMR", typeof(TupleSpaceSMR));
 
             List<string> servers = new List<string>();
             try
@@ -45,6 +45,7 @@ namespace DIDA_TUPLE_SMR
                         servers.Add(i);
                     }
                 }
+                server.SetServers(servers);
             }
             catch (FileNotFoundException)
             {
@@ -58,10 +59,11 @@ namespace DIDA_TUPLE_SMR
             foreach (string serverPath in servers) {
                 try
                 {
-                    ITotalOrder server = (ITotalOrder)Activator.GetObject(typeof(ITotalOrder), serverPath);
-                    if (server.areYouTheMaster())
+                    ITotalOrder remoteServer = (ITotalOrder)Activator.GetObject(typeof(ITotalOrder), serverPath);
+                    if (remoteServer.areYouTheMaster("tcp://localhost:" + args[0] + "/DIDA-TUPLE-SMR"))
                     {
                         pathMaster = serverPath;
+                        server.MasterPath = pathMaster;
                         break;
                     }
                 }
@@ -72,9 +74,8 @@ namespace DIDA_TUPLE_SMR
 
             //no master exists! so i am the master now!
             if (pathMaster == "") {
-                TupleSpaceSMR tsSMR = new TupleSpaceSMR();
-                RemotingServices.Marshal(tsSMR, "DIDA-TUPLE-SMR", typeof(TupleSpaceSMR));
-                tsSMR.setIAmTheMaster();
+                server.setIAmTheMaster();
+                server.MasterPath = server.MyPath;
                 Console.WriteLine("** STATUS: I'm the master now!");
             }
             else {

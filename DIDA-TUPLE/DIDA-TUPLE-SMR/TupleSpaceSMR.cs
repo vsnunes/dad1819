@@ -28,14 +28,42 @@ namespace DIDA_TUPLE_SMR
         /// </summary>
         public enum Type { NORMAL, MASTER };
 
+        private string _masterPath;
+
+        private List<string> _servers;
+
         private Type _type;
+
+        /// <summary>
+        /// Check the first areYouTheMaster to select a candidate to backup me (the MASTER)
+        /// </summary>
+        private bool _firstReplica;
+
+        /// <summary>
+        /// Path for the backup server.
+        /// </summary>
+        private string _backup;
+
+        private TupleSpaceSMR _replic;
+
+        private string _myPath;
+
+        public string MyPath { get => _myPath; set => _myPath = value; }
+
+        public string MasterPath {set => _masterPath = value; }
+       
 
         public TupleSpaceSMR()
         {
             _tupleSpace = new List<Tuple>();
             _log = new Log();
             _type = Type.NORMAL;
+            _firstReplica = true;
+            _backup = "";
+            _myPath = "";
         }
+
+        
 
         public int ItemCount()
         {
@@ -69,6 +97,11 @@ namespace DIDA_TUPLE_SMR
             
 
 
+        }
+
+        //me no likey
+        public void SetServers(List<string> servers){
+            _servers = servers;
         }
 
         public List<Tuple> GetTuples()
@@ -166,11 +199,86 @@ namespace DIDA_TUPLE_SMR
             }
         }
 
-        public bool areYouTheMaster() {
+        public bool areYouTheMaster(string serverPath) {
+            lock (this)
+            {
+                //First replica is my backup when i'm the master
+                if (_firstReplica)
+                {
+                    _replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
+                    _replic.setBackup(_myPath);
+                    _firstReplica = false;
+                }
+
+            }
             return _type == Type.MASTER;
         }
 
+        public void setNewMaster(string pathNewMaster)
+        {
+            _masterPath = pathNewMaster;
+            Console.WriteLine("** NEW_MASTER: I was informed that the new master is at: " + _masterPath);
+        }
+
         public void setIAmTheMaster() { _type = Type.MASTER; }
+
+        public void setBackup(string path){
+
+            //Backup will store the path to the master.
+            lock (this)
+            {
+                _backup = path;
+            }
+            _replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
+
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                while (true)
+                {
+                    try
+                    {
+                        //is the master alive?
+                        _replic.imAlive();
+                        Console.WriteLine("My master is alive! Let me wait 10 secs!");
+                    }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                    Thread.Sleep(10000);
+                }
+
+                //My master has crashed!
+                lock (this)
+                {
+                    Console.WriteLine("My master has just crashed! I'm the master now!");
+                    this.setIAmTheMaster();
+                }
+                    //But we need to update alive servers because they don't know that his
+                    //master is not available!
+                    foreach (string serverPath in _servers)
+                    {
+                        try
+                        {
+                            TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
+                            //I'm the master so inform others
+                            server.setNewMaster(_myPath);
+                            Console.WriteLine("** NEW_MASTER_UPDATE: Successfuly informed " + serverPath + " of who is the new master!");
+                    }
+                        catch (Exception)
+                        {
+                            Console.WriteLine("** NEW_MASTER_UPDATE: Tried to inform " + serverPath + " but its dead!");
+                        }
+                    }
+                
+                
+                return; //just to ensure that we stop the thread
+            });
+        }
+
+        //Ping        
+        public void imAlive() { }
 
     }
 }
