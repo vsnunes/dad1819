@@ -15,6 +15,8 @@ namespace DIDA_CLIENT
         {
             List<string> servers = new List<string>();
 
+            List<Tuple> responses = new List<Tuple>();
+
             string[] file = File.ReadAllLines("../../serverList.txt");
 
             foreach (string i in file)
@@ -50,22 +52,31 @@ namespace DIDA_CLIENT
             if (args.Count() == 0)
             {
                 Console.WriteLine("Client will read now ...");
-                Tuple r = server.read(t);
-                Console.WriteLine("Client read returned: " + r);
+                foreach(ITupleSpace its in serversObj)
+                {
+                    responses.Add(its.read(t));
+                }
+               
             }
             else if (args.Count() == 1)
             {
                 Console.WriteLine("Client will take now ...");
-                Tuple r = server.take(t);
-                Console.WriteLine("Client take returned: " + r);
+                foreach (ITupleSpace its in serversObj)
+                {
+                    responses.Add(its.take(t));
+                }
             }
 
             else
             {
                 Console.WriteLine("Client will write now ...");
-                server.write(t);
-                Console.WriteLine("Client write returned!");
+                foreach (ITupleSpace its in serversObj)
+                {
+                    its.write(t);
+                }
+                
             }
+
             Console.ReadLine();
         }
     }
