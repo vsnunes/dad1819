@@ -26,11 +26,15 @@ namespace DIDA_CLIENT
 
             List<ITupleSpace> serversObj = new List<ITupleSpace>();
 
-
+            ITupleSpace tupleSpace = null;
             foreach (string serverPath in servers)
             {
-                ITupleSpace tupleSpace = null;
-                tupleSpace = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), serverPath);
+                try
+                {
+                    tupleSpace = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), serverPath);
+                    tupleSpace.ItemCount();
+                }
+                catch (Exception) { tupleSpace = null; }
                 if (tupleSpace != null)
                     serversObj.Add(tupleSpace);
             }
@@ -38,6 +42,7 @@ namespace DIDA_CLIENT
             if(serversObj.Count() == 0)
             {
                 Console.WriteLine("No servers available!");
+                Console.ReadLine();
                 System.Environment.Exit(1);
             }
 
