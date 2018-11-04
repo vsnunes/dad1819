@@ -29,12 +29,10 @@ namespace DIDA_CLIENT
 
             foreach (string serverPath in servers)
             {
-                try
-                {
-                    serversObj.Add((ITupleSpace)Activator.GetObject(typeof(ITupleSpace), serverPath));
-                    
-                }
-                catch (Exception) { }
+                ITupleSpace tupleSpace = null;
+                tupleSpace = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), serverPath);
+                if (tupleSpace != null)
+                    serversObj.Add(tupleSpace);
             }
                 
             if(serversObj.Count() == 0)
@@ -54,7 +52,10 @@ namespace DIDA_CLIENT
                 Console.WriteLine("Client will read now ...");
                 foreach(ITupleSpace its in serversObj)
                 {
-                    responses.Add(its.read(t));
+                    Tuple response = null;
+                    response = its.read(t);
+                    if(response != null)
+                        responses.Add(response);
                 }
                
             }
@@ -63,7 +64,10 @@ namespace DIDA_CLIENT
                 Console.WriteLine("Client will take now ...");
                 foreach (ITupleSpace its in serversObj)
                 {
-                    responses.Add(its.take(t));
+                    Tuple response = null;
+                    response = its.take(t);
+                    if (response != null)
+                        responses.Add(response);
                 }
             }
 
@@ -71,11 +75,14 @@ namespace DIDA_CLIENT
             {
                 Console.WriteLine("Client will write now ...");
                 foreach (ITupleSpace its in serversObj)
-                {
-                    its.write(t);
-                }
-                
+                        its.write(t);
             }
+
+            Console.WriteLine(responses.Count());
+
+            foreach (Tuple tup in responses)
+                    Console.WriteLine(tup);
+
 
             Console.ReadLine();
         }

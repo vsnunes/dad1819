@@ -74,30 +74,33 @@ namespace DIDA_TUPLE_SMR
 
         public Tuple read(Tuple tuple)
         {
-            
-            Tuple result = null;
-
-            while (result == null)
+            if (_type != Type.MASTER)
             {
-                lock (this)
+                return null;
+            }
+            else
+            {
+                Tuple result = null;
+
+                while (result == null)
                 {
-                    foreach (Tuple t in _tupleSpace)
+                    lock (this)
                     {
-                        if (t.Equals(tuple))
+                        foreach (Tuple t in _tupleSpace)
                         {
-                            result = t;
-                            break; //just found one so no need to continue searching
+                            if (t.Equals(tuple))
+                            {
+                                result = t;
+                                break; //just found one so no need to continue searching
+                            }
                         }
+                        if (result == null) //stil has not find any match
+                            Monitor.Wait(this);
                     }
-                    if (result == null) //stil has not find any match
-                        Monitor.Wait(this);
                 }
-            }    
-            
-            return result; 
-            
 
-
+                return result;
+            }
         }
 
         //me no likey
