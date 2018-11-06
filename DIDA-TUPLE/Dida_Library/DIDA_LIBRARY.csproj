@@ -41,12 +41,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IFrontEnd.cs" />
     <Compile Include="ITotalOrder.cs" />
+    <Compile Include="ITupleSpaceXL.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Request.cs" />
     <Compile Include="Tuple.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ITupleSpace.cs" />
+    <Compile Include="View.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
