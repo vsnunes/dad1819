@@ -56,6 +56,11 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
+        public void remove(Tuple tuple)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Takes a tuple from the tuple space.
         /// </summary>
@@ -95,5 +100,6 @@ namespace DIDA_TUPLE_XL
             }
             Console.WriteLine("** EXECUTE_WRITE: " + tuple);
         }
+
     }
 }

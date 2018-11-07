@@ -40,5 +40,11 @@ namespace DIDA_LIBRARY
         /// </summary>
         /// <returns></returns>
         int ItemCount();
+
+        /// <summary>
+        /// Executes second phase of take
+        /// </summary>
+        /// <param name="tuple"></param>
+        void remove(Tuple tuple);
     }
 }

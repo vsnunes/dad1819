@@ -130,5 +130,9 @@ namespace DIDA_LIBRARY
             return repr;
         }
 
+        public override int GetHashCode()
+        {
+            return _fields.Count();
+        }
     }
 }

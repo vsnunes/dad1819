@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
@@ -26,6 +25,8 @@ namespace DIDA_CLIENT
         /// Delegate for Reading Operations
         /// </summary>
         public delegate Tuple RemoteAsyncReadDelegate(Tuple t);
+
+        public delegate void RemoteAsyncSecondPhaseDelegate(Tuple t);
 
         /// <summary>
         /// Delegate for Writes that require workerId, requestId and a tuple.
@@ -159,13 +160,43 @@ namespace DIDA_CLIENT
                 Monitor.Wait(TakeLock);
             }
 
+            Tuple tup = TupleSelection(Intersection(_responseTake));
+            Remove(tup);
             _requestId++;
+            return  null; 
+        }
 
-            return  null; //TupleSelection(Intersection(_responseTake));
+        public void Remove(Tuple tuple){
+            List<string> actualView = this.GetView();
+            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+
+            ITupleSpaceXL tupleSpace = null;
+            //save remoting objects of all members of the view
+            foreach (string serverPath in actualView)
+            {
+                try
+                {
+                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                    tupleSpace.ItemCount(); //just to check availability of the server
+                }
+                catch (Exception) { tupleSpace = null; }
+                if (tupleSpace != null)
+                    serversObj.Add(tupleSpace);
+            }
+
+            foreach (ITupleSpaceXL server in serversObj)
+            {
+                try
+                {
+                    RemoteAsyncSecondPhaseDelegate RemoteDel = new RemoteAsyncSecondPhaseDelegate(server.remove);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, null, null);
+                }
+                catch (Exception) { }
+            }
         }
 
         //Selects a tuple do initiate the second phase of take
-        private Tuple TupleSelection(List<Tuple> l)
+        private static Tuple TupleSelection(IEnumerable<Tuple> l)
         {
             return l.ElementAt(0);
         }
@@ -175,11 +206,12 @@ namespace DIDA_CLIENT
                 return list[0];
 
             
-            IEnumerable<Tuple> intersectSet = new List<Tuple>();
-            intersectSet = list.ElementAt(0);
+            IEnumerable<Tuple> intersectSet = list.ElementAt(0);
+            Console.WriteLine(intersectSet.ElementAt(0));
 
-            for (int i = 2; i < list.Count(); i++) {
-                intersectSet = list.ElementAt(i).Intersect(intersectSet);
+            for (int i = 1; i < list.Count(); i++) {
+                intersectSet = list.ElementAt(i).Intersect(intersectSet, new TupleComparator());
+                Console.WriteLine(intersectSet.Count());
             }
 
 
@@ -215,6 +247,22 @@ namespace DIDA_CLIENT
                 catch (Exception) { }
             }
             _requestId++;
+        }
+    }
+
+    /// <summary>
+    /// Tuple Comparator Class for Intersect method of IEnumerable objects
+    /// </summary>
+    class TupleComparator : IEqualityComparer<Tuple>
+    {
+        public bool Equals(Tuple x, Tuple y)
+        {
+            return x.Equals(y);
+        }
+
+        public int GetHashCode(Tuple obj)
+        {
+            return obj.GetHashCode();
         }
     }
 }
