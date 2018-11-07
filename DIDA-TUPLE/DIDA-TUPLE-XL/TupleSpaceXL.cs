@@ -19,6 +19,8 @@ namespace DIDA_TUPLE_XL
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
+        private List<Tuple> _TakeMatches;
+
         public TupleSpaceXL()
         {
             _view = View.Instance;
@@ -58,7 +60,15 @@ namespace DIDA_TUPLE_XL
 
         public void remove(Tuple tuple)
         {
-            throw new NotImplementedException();
+            //UnLock all previews locked tuples
+            foreach (Tuple t in _TakeMatches)
+            {
+                Monitor.Pulse(t);
+            }
+
+            //Just remove the selected tuple
+            _tupleSpace.Remove(tuple);
+
         }
 
         /// <summary>
@@ -68,25 +78,26 @@ namespace DIDA_TUPLE_XL
         /// <returns></returns>
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
+            //Same as read but retrieves the list and lock the items.
             Tuple match = null;
+            _TakeMatches = new List<Tuple>();
 
             foreach (Tuple t in _tupleSpace)
             {
                 if (t.Equals(tuple))
                 {
-                    match = t;
-                    break; //just found one so no need to continue searching
+                    _TakeMatches.Add(match);
+                    
                 }
             }
 
-            if (match != null)
+            //Lock all selected tuples 'cause i don't know what tuple is going to be removed
+            foreach (Tuple t in _TakeMatches)
             {
-                lock (this) { _tupleSpace.Remove(match); }
-                return null; // match;
+                Monitor.Enter(t);
             }
 
-            //not found 
-            return null;
+            return _TakeMatches;
         }
 
         public void write(int workerId, int requestId, Tuple tuple)
