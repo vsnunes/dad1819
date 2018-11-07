@@ -32,8 +32,8 @@ namespace DIDA_LIBRARY
         /// <param name="workerId">The client/worker identification.</param>
         /// <param name="requestId">The request identification of this operation.</param>
         /// <param name="tuple">A tuple to take.</param>
-        /// <returns>A taple matching the param.</returns>
-        Tuple take(int workerId, int requestId, Tuple tuple);
+        /// <returns>A list of taples matching the param.</returns>
+        List<Tuple> take(int workerId, int requestId, Tuple tuple);
 
         /// <summary>
         /// Gets the number of itens in the tupple space.

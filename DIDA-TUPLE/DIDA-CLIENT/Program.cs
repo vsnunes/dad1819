@@ -36,7 +36,7 @@ namespace DIDA_CLIENT
             switch (args[0])
             {
                 case "SMR": frontEnd = new FrontEndSMR(); break;
-                case "XL": frontEnd = new FrontEnd(Int32.Parse(args[1])); break;
+                case "XL": frontEnd = new FrontEndXL(Int32.Parse(args[1])); break;
             }
 
             List<Object> fields = new List<Object>();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
@@ -11,9 +12,12 @@ using Tuple = DIDA_LIBRARY.Tuple;
 namespace DIDA_CLIENT
 {
 
-    class FrontEndXL: IFrontEnd
+    public class FrontEndXL: IFrontEnd
     {
-        private static Object Lock = new Object();
+        private static Object ReadLock = new Object();
+
+        private static Object TakeLock = new Object();
+
 
         private int _workerId;
         private int _requestId = 0;
@@ -21,12 +25,18 @@ namespace DIDA_CLIENT
         /// <summary>
         /// Delegate for Reading Operations
         /// </summary>
-        public delegate Tuple RemoteAsyncDelegate(Tuple t);
+        public delegate Tuple RemoteAsyncReadDelegate(Tuple t);
 
         /// <summary>
-        /// Delegate for Changers (aka Read and Takes) that require workerId, requestId and a tuple.
+        /// Delegate for Writes that require workerId, requestId and a tuple.
         /// </summary>
-        public delegate void RemoteAsyncChangerDelegate(int workerId,int requestId, Tuple t);
+        public delegate void RemoteAsyncWriteDelegate(int workerId,int requestId, Tuple t);
+
+        /// <summary>
+        /// Delegate for Takes that require workerId, requestId and a tuple.
+        /// Remeber: Take retrieves a list of potencial tuples to be removed
+        /// </summary>
+        public delegate List<Tuple> RemoteAsyncTakeDelegate(int workerId, int requestId, Tuple t);
 
         public FrontEndXL(int workerId) {
             _workerId = workerId; 
@@ -36,7 +46,9 @@ namespace DIDA_CLIENT
         /// First read response.
         /// It will be update on callback function
         /// </summary>
-        private static Tuple response = null;
+        private static Tuple _responseRead = null;
+
+        private static List<List<Tuple>> _responseTake = null;
 
         public List<string> GetView()
         {
@@ -44,17 +56,31 @@ namespace DIDA_CLIENT
         }
 
         /// <summary>
-        /// First read response.
-        /// It will be update on callback function
+        /// Callback function to process read's server' replies
+        /// <param name="IAsyncResult"A AsyncResult Delgate Object.</param>
         /// </summary>
-        public static void Callback(IAsyncResult ar)
+        public static void CallbackRead(IAsyncResult ar)
         {
-            RemoteAsyncDelegate del = (RemoteAsyncDelegate)((AsyncResult)ar).AsyncDelegate;
-            if (response == null)
+            RemoteAsyncReadDelegate del = (RemoteAsyncReadDelegate)((AsyncResult)ar).AsyncDelegate;
+            if (_responseRead == null)
             {
-                response = del.EndInvoke(ar);
-                Monitor.Pulse(Lock);
+                _responseRead = del.EndInvoke(ar);
+                Monitor.Pulse(ReadLock);
             }
+        }
+
+        /// <summary>
+        /// Callback function to process take's server' replies
+        /// <param name="ar"A AsyncResult Delgate Object.</param>
+        /// </summary>
+        public static void CallbackTake(IAsyncResult ar)
+        {
+            RemoteAsyncTakeDelegate del = (RemoteAsyncTakeDelegate)((AsyncResult)ar).AsyncDelegate;
+            lock(TakeLock) {
+                _responseTake.Add(del.EndInvoke(ar));
+                Monitor.Pulse(TakeLock);
+            }
+            
         }
 
         public Tuple Read(Tuple tuple)
@@ -81,30 +107,83 @@ namespace DIDA_CLIENT
             {
                 try
                 {
-                    RemoteAsyncDelegate RemoteDel = new RemoteAsyncDelegate(server.read);
-                    AsyncCallback RemoteCallback = new AsyncCallback(Callback);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple,Callback,null);
+                    RemoteAsyncReadDelegate RemoteDel = new RemoteAsyncReadDelegate(server.read);
+                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
                 }
                 catch (Exception) { }
             }
 
-            while(response == null)
+            while(_responseRead == null)
             {
-                Monitor.Wait(Lock);
+                Monitor.Wait(ReadLock);
             }
             _requestId++;
-            return response;
+            return _responseRead;
         }
 
         public Tuple Take(Tuple tuple)
         {
             List<string> actualView = this.GetView();
-            foreach (string server in actualView)
-            {
+            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
+            ITupleSpaceXL tupleSpace = null;
+            //save remoting objects of all members of the view
+            foreach (string serverPath in actualView)
+            {
+                try
+                {
+                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                    tupleSpace.ItemCount(); //just to check availability of the server
+                }
+                catch (Exception) { tupleSpace = null; }
+                if (tupleSpace != null)
+                    serversObj.Add(tupleSpace);
             }
+
+            foreach (ITupleSpaceXL server in serversObj)
+            {
+                try
+                {
+                    RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
+                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                }
+                catch (Exception) { }
+            }
+
+            //miguel: this only works in perfect case
+            //TODO: One machine belonging to the view has just crashed
+            while (_responseTake.Count() != serversObj.Count())
+            {
+                Monitor.Wait(TakeLock);
+            }
+
             _requestId++;
-            return null;
+
+            return  null; //TupleSelection(Intersection(_responseTake));
+        }
+
+        //Selects a tuple do initiate the second phase of take
+        private Tuple TupleSelection(List<Tuple> l)
+        {
+            return l.ElementAt(0);
+        }
+
+        public static IEnumerable<Tuple> Intersection(List<List<Tuple>> list) {
+            if (list.Count == 1)
+                return list[0];
+
+            
+            IEnumerable<Tuple> intersectSet = new List<Tuple>();
+            intersectSet = list.ElementAt(0);
+
+            for (int i = 2; i < list.Count(); i++) {
+                intersectSet = list.ElementAt(i).Intersect(intersectSet);
+            }
+
+
+           return intersectSet;
         }
 
         public void Write(Tuple tuple)
@@ -130,7 +209,7 @@ namespace DIDA_CLIENT
             {
                 try
                 {
-                    RemoteAsyncChangerDelegate RemoteDel = new RemoteAsyncChangerDelegate(server.write);
+                    RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
                 }
                 catch (Exception) { }

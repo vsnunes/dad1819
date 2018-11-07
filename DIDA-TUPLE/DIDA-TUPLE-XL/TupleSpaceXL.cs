@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -60,7 +61,7 @@ namespace DIDA_TUPLE_XL
         /// </summary>
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
-        public Tuple take(int workerId, int requestId, Tuple tuple)
+        public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
             Tuple match = null;
 
@@ -76,7 +77,7 @@ namespace DIDA_TUPLE_XL
             if (match != null)
             {
                 lock (this) { _tupleSpace.Remove(match); }
-                return match;
+                return null; // match;
             }
 
             //not found 
