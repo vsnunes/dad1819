@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DIDA_LIBRARY;
@@ -14,6 +12,8 @@ namespace DIDA_TUPLE_SMR
     {
         //Possibilidade de hashtable
         private List<Tuple> _tupleSpace;
+
+        private View _view;
 
         /// <summary>
         /// List of pending operations that requires coordination between all replics.
@@ -62,6 +62,8 @@ namespace DIDA_TUPLE_SMR
             _backup = "";
             _myPath = "";
             _servers = new List<string>();
+            _view = View.Instance;
+            _view.Add(MyPath);
         }
 
         
