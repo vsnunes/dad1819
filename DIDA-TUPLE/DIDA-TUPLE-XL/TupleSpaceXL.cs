@@ -19,7 +19,7 @@ namespace DIDA_TUPLE_XL
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
-        private List<Tuple> _TakeMatches;
+        private ImmutableList<Tuple> _TakeMatches;
 
         public TupleSpaceXL()
         {
@@ -76,25 +76,22 @@ namespace DIDA_TUPLE_XL
         /// </summary>
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
-        public List<Tuple> take(int workerId, int requestId, Tuple tuple)
+        public ImmutableList<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
             //Same as read but retrieves the list and lock the items.
             Tuple match = null;
-            _TakeMatches = new List<Tuple>();
+            _TakeMatches = ImmutableList.Create<Tuple>();
+
 
             foreach (Tuple t in _tupleSpace)
             {
                 if (t.Equals(tuple))
                 {
-                    _TakeMatches.Add(match);
-                    
+                    //Lock all selected tuples 'cause i don't know what tuple is going to be removed
+                    Monitor.Enter(t);
+                    if (_tupleSpace.Contains(t) == false) continue;
+                    _TakeMatches.Add(t);
                 }
-            }
-
-            //Lock all selected tuples 'cause i don't know what tuple is going to be removed
-            foreach (Tuple t in _TakeMatches)
-            {
-                Monitor.Enter(t);
             }
 
             return _TakeMatches;
