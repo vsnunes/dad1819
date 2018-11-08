@@ -196,6 +196,7 @@ namespace DIDA_TUPLE_SMR
                     //we are with the lock already so lets remove the element
                     else _tupleSpace.Remove(result);
 
+                    //if flag is true then write on current replic log
                     if (writeOnLog)
                     {
                         _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);

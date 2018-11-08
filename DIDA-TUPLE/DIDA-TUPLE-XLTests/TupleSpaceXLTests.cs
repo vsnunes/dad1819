@@ -22,6 +22,7 @@ namespace DIDA_TUPLE_XL.Tests
         Tuple _tuple2;
         Tuple _tuple3;
         Tuple _tuple4;
+        TupleSpaceXL _tupleSpace;
 
         [TestInitialize]
         public void TestInitialize()
@@ -31,6 +32,8 @@ namespace DIDA_TUPLE_XL.Tests
             _fields2 = new List<Object>();
             _fields3 = new List<Object>();
             _fields4 = new List<Object>();
+            _tupleSpace = new TupleSpaceXL();
+
         }
 
         [TestMethod()]
@@ -178,34 +181,154 @@ namespace DIDA_TUPLE_XL.Tests
 
         }
 
-        /*[TestMethod()]
-        public void TupleSpaceXLTest()
+        [TestMethod()]
+        public void SimplewriteTest()
         {
-            Assert.Fail();
+            Assert.AreEqual(0, _tupleSpace.ItemCount());
+
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+
+            _tupleSpace.write(1, 1, _tuple1);
+
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+
         }
 
         [TestMethod()]
-        public void ItemCountTest()
+        public void writeDuplicatesTest()
         {
-            Assert.Fail();
+            Assert.AreEqual(0, _tupleSpace.ItemCount());
+
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+
+            _fields2.Add("cat");
+            _fields2.Add("white");
+            _tuple2 = new Tuple(_fields2);
+
+            _tupleSpace.write(1, 1, _tuple1);
+
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+
+            _tupleSpace.write(1, 2, _tuple2);
+
+            Assert.AreEqual(2, _tupleSpace.ItemCount());
+
         }
 
         [TestMethod()]
         public void readTest()
         {
-            Assert.Fail();
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+
+            _fields2.Add("cat");
+            _fields2.Add("white");
+            _tuple2 = new Tuple(_fields2);
+
+            _tupleSpace.write(1, 1, _tuple1);
+
+            Tuple readReturn = null;
+            readReturn = _tupleSpace.read(_tuple2);
+
+            Assert.IsNotNull(readReturn);
+
+            Assert.AreEqual(_tuple1, readReturn);
         }
 
         [TestMethod()]
+        public void readUsingWildCardsTest()
+        {
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+
+            _fields2.Add("cat");
+            _fields2.Add("*");
+            _tuple2 = new Tuple(_fields2);
+
+            _tupleSpace.write(1, 1, _tuple1);
+
+            Tuple readReturn = null;
+            readReturn = _tupleSpace.read(_tuple2);
+
+            Assert.IsNotNull(readReturn);
+
+            Assert.AreEqual(_tuple1, readReturn);
+        }
+
+        [TestMethod()]
+        public void readIntensiveTest()
+        {
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
+
+            _fields2.Add("cat");
+            _fields2.Add("gray");
+            _tuple2 = new Tuple(_fields2);
+
+            _fields3.Add("dog");
+            _fields3.Add("brown");
+            _tuple3 = new Tuple(_fields3);
+
+            _fields4.Add("dog");
+            _fields4.Add("gray");
+            _tuple4 = new Tuple(_fields4);
+
+            _tupleSpace.write(1, 1, _tuple1);
+            Tuple readReturn = null;
+
+            readReturn = _tupleSpace.read(_tuple1);
+            Assert.IsNotNull(readReturn);
+            Assert.AreEqual(_tuple1, readReturn);
+
+            _tupleSpace.write(1, 2, _tuple2);
+
+            readReturn = _tupleSpace.read(_tuple2);
+            Assert.IsNotNull(readReturn);
+            Assert.AreEqual(_tuple2, readReturn);
+
+            //Two writes in a row
+            _tupleSpace.write(1, 3, _tuple3);
+            _tupleSpace.write(1, 4, _tuple4);
+
+            //This is not a mistake, first read 4 and then read 3
+            readReturn = _tupleSpace.read(_tuple4);
+            Assert.IsNotNull(readReturn);
+            Assert.AreEqual(_tuple4, readReturn);
+
+            readReturn = _tupleSpace.read(_tuple3);
+            Assert.IsNotNull(readReturn);
+            Assert.AreEqual(_tuple3, readReturn);
+        }
+
+        /*[TestMethod()]
         public void takeTest()
         {
-            Assert.Fail();
-        }
+            _fields.Add("cat");
+            _fields.Add("white");
+            _tuple1 = new Tuple(_fields);
 
-        [TestMethod()]
-        public void writeTest()
-        {
-            Assert.Fail();
+            _fields2.Add("cat");
+            _fields2.Add("white");
+            _tuple2 = new Tuple(_fields2);
+
+            _tupleSpace.write(1, 1, _tuple1);
+
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+
+            List<Tuple> takeReturn = null;
+
+            takeReturn = _tupleSpace.take(1, 2, _tuple1);
+            Assert.IsNotNull(takeReturn);
+            Assert.AreEqual(_tuple1, takeReturn);
+
+            Assert.AreEqual(0, _tupleSpace.ItemCount());
         }*/
     }
 }
