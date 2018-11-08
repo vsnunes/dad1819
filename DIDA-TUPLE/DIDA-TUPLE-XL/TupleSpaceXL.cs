@@ -77,22 +77,30 @@ namespace DIDA_TUPLE_XL
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
         public ImmutableList<Tuple> take(int workerId, int requestId, Tuple tuple)
-        {
-            //Same as read but retrieves the list and lock the items.
-            Tuple match = null;
-            _TakeMatches = ImmutableList.Create<Tuple>();
+        {           
+            //Just for restart for.
+            /*Supose that the Enter blocked on a item.
+             * And when that item is unlock the item has deleted!
+             * In that case _tupleSpace is out of order, just reboot the cycle.
+             * */
+            bool hadBreak = false;
 
-
-            foreach (Tuple t in _tupleSpace)
+            do
             {
-                if (t.Equals(tuple))
+                _TakeMatches = ImmutableList.Create<Tuple>();
+                foreach (Tuple t in _tupleSpace)
                 {
-                    //Lock all selected tuples 'cause i don't know what tuple is going to be removed
-                    Monitor.Enter(t);
-                    if (_tupleSpace.Contains(t) == false) continue;
-                    _TakeMatches.Add(t);
+                    hadBreak = false;
+                    if (t.Equals(tuple))
+                    {
+                        //Lock all selected tuples 'cause i don't know what tuple is going to be removed
+                        Monitor.Enter(t);
+                        if (_tupleSpace.Contains(t) == false) { hadBreak = true; break; }
+                        _TakeMatches.Add(t);
+                    }
                 }
-            }
+            } while (hadBreak);
+
 
             return _TakeMatches;
         }
