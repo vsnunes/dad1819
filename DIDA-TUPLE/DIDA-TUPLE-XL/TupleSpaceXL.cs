@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Transactions;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,7 +11,7 @@ using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_XL
 {
-    public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL
+    public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL, IEnlistmentNotification
     {
         private List<Tuple> _tupleSpace;
         private Log _log;
@@ -28,10 +29,7 @@ namespace DIDA_TUPLE_XL
 
         public Log Log { get => _log; set => _log = value; }
 
-        public int ItemCount()
-        {
-            return _tupleSpace.Count();
-        }
+        
 
         public Tuple read(Tuple tuple)
         {
@@ -70,38 +68,38 @@ namespace DIDA_TUPLE_XL
 
         }
 
+        public int ItemCount()
+        {
+            return _tupleSpace.Count();
+        }
+
         /// <summary>
         /// Takes a tuple from the tuple space.
         /// </summary>
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
-        {           
-            //Just for restart for.
-            /*Supose that the Enter blocked on a item.
-             * And when that item is unlock the item has deleted!
-             * In that case _tupleSpace is out of order, just reboot the cycle.
-             * */
-            bool hadBreak = false;
+        {
+            List<Tuple> result = new List<Tuple>();
 
-            do
+            while (result.Count == 0)
             {
-                _TakeMatches = new List<Tuple>();
-                foreach (Tuple t in _tupleSpace)
+                lock (this)
                 {
-                    hadBreak = false;
-                    if (t.Equals(tuple))
+                    foreach (Tuple t in _tupleSpace)
                     {
-                        //Lock all selected tuples 'cause i don't know what tuple is going to be removed
-                        Monitor.Enter(t);
-                        if (_tupleSpace.Contains(t) == false) { hadBreak = true; break; }
-                        _TakeMatches.Add(t);
+                        if (t.Equals(tuple))
+                        {
+                            result.Add(tuple);
+                            Monitor.Enter(tuple);
+                        }
                     }
+                    if (result.Count == 0) //stil has not find any match
+                        Monitor.Wait(this);
                 }
-            } while (hadBreak);
+            }
 
-
-            return _TakeMatches;
+            return result;
         }
 
         public void write(int workerId, int requestId, Tuple tuple)
@@ -114,6 +112,41 @@ namespace DIDA_TUPLE_XL
                 Monitor.Pulse(this);
             }
             Console.WriteLine("** EXECUTE_WRITE: " + tuple);
+        }
+
+
+        // ================= TWO PHASE COMMIT FOR TAKE OPERATIONS =================
+
+        /// <summary>
+        /// Remove the selected tuple from the intersection.
+        /// </summary>
+        /// <param name="enlistment"></param>
+        public void Commit(Enlistment enlistment)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void InDoubt(Enlistment enlistment)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Prepares the take operation by locking only the items.
+        /// </summary>
+        /// <param name="preparingEnlistment"></param>
+        public void Prepare(PreparingEnlistment preparingEnlistment)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Unlock all previous lock items.
+        /// </summary>
+        /// <param name="enlistment"></param>
+        public void Rollback(Enlistment enlistment)
+        {
+            throw new NotImplementedException();
         }
 
     }

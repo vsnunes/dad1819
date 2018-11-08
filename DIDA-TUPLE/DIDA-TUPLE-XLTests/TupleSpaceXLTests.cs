@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using DIDA_CLIENT;
 using Tuple = DIDA_LIBRARY.Tuple;
 
@@ -307,28 +308,83 @@ namespace DIDA_TUPLE_XL.Tests
             Assert.AreEqual(_tuple3, readReturn);
         }
 
-        /*[TestMethod()]
-        public void takeTest()
+        /**
+         * Caution: This only test Take 1 Phase!
+         * So it is not checked if the item is removed from the tuple space!
+         * */
+        [TestMethod()]
+        public void take1PhaseTest()
         {
             _fields.Add("cat");
             _fields.Add("white");
             _tuple1 = new Tuple(_fields);
 
             _fields2.Add("cat");
-            _fields2.Add("white");
+            _fields2.Add("gray");
             _tuple2 = new Tuple(_fields2);
 
             _tupleSpace.write(1, 1, _tuple1);
+            _tupleSpace.write(1, 2, _tuple2);
 
-            Assert.AreEqual(1, _tupleSpace.ItemCount());
+            //Check if the tuple space has the 2 elements we added right now
+            Assert.AreEqual(2, _tupleSpace.ItemCount());
 
             List<Tuple> takeReturn = null;
 
-            takeReturn = _tupleSpace.take(1, 2, _tuple1);
+            takeReturn = _tupleSpace.take(1, 3, _tuple1);
             Assert.IsNotNull(takeReturn);
-            Assert.AreEqual(_tuple1, takeReturn);
+
+            //Only one tuple should be returned
+            Assert.AreEqual(1, takeReturn.Count);
+
+            Assert.AreEqual(_tuple1, takeReturn[0]);
+        }
+
+        /// <summary>
+        /// A test to check for thread waitness of take.
+        /// This is a multithreading test.
+        /// Caution: This only test Take 1 Phase!
+        /// </summary>
+        [TestMethod()]
+        public void takeNotAvailable1PhaseTest()
+        {
+            _fields.Add("cat");
+            _fields.Add("white");
+            _fields2.Add("dog");
+            _fields2.Add("brown");
+            _tuple1 = new Tuple(_fields);
+            _tuple2 = new Tuple(_fields2);
 
             Assert.AreEqual(0, _tupleSpace.ItemCount());
-        }*/
+            //write <cat,white>
+            _tupleSpace.write(1,1,_tuple1);
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //lets delay the write in 1 second
+                Thread.Sleep(1000);
+                _tupleSpace.write(2,1,_tuple2);
+                return; //just to ensure that we stop the thread
+            });
+
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+            //take <dog, brown> which will only exists 1 sec ahead!
+            List<Tuple> takeResult = null;
+
+            takeResult = _tupleSpace.take(1, 2, _tuple2);
+
+            //Should exists 2 items <cat, white> and <dog, brown>
+            //Caution: This is a 1 phase take test
+            Assert.AreEqual(2, _tupleSpace.ItemCount());
+
+            Assert.IsNotNull(takeResult);
+
+            Assert.AreEqual(1, takeResult.Count);
+
+            Assert.AreEqual(_tuple2, takeResult[0]);
+
+        }
     }
 }
