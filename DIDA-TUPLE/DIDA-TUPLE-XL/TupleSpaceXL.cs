@@ -11,7 +11,7 @@ using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_TUPLE_XL
 {
-    public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL, IEnlistmentNotification
+    public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL
     {
         private List<Tuple> _tupleSpace;
         private Log _log;
@@ -19,12 +19,13 @@ namespace DIDA_TUPLE_XL
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
-        private List<Tuple> _TakeMatches;
+        private LockList _lockList;
 
         public TupleSpaceXL()
         {
             _view = View.Instance;
             _tupleSpace = new List<Tuple>();
+            _lockList = new LockList();
         }
 
         public Log Log { get => _log; set => _log = value; }
@@ -58,10 +59,10 @@ namespace DIDA_TUPLE_XL
         public void remove(Tuple tuple)
         {
             //UnLock all previews locked tuples
-            foreach (Tuple t in _TakeMatches)
+            /*foreach (Tuple t in _TakeMatches)
             {
                 Monitor.Pulse(t);
-            }
+            }*/
 
             //Just remove the selected tuple
             _tupleSpace.Remove(tuple);
@@ -81,23 +82,39 @@ namespace DIDA_TUPLE_XL
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
             List<Tuple> result = new List<Tuple>();
+            int timeout = 1000;
+            
 
             while (result.Count == 0)
             {
+                bool lockTaken = false;
                 lock (this)
                 {
                     foreach (Tuple t in _tupleSpace)
                     {
                         if (t.Equals(tuple))
                         {
-                            result.Add(tuple);
-                            Monitor.Enter(tuple);
+                            Monitor.TryEnter(t, timeout, ref lockTaken);
+                            if(lockTaken){
+                                _lockList.AddElement(workerId,t);
+                                result.Add(t);
+                            }
+                            else{
+                                //this rollback just release the locks
+                                Rollback(_lockList, workerId);
+                                result.Clear();
+                                break;
+                            }
+                            
                         }
                     }
                     if (result.Count == 0) //stil has not find any match
                         Monitor.Wait(this);
                 }
             }
+
+
+
 
             return result;
         }
@@ -118,35 +135,11 @@ namespace DIDA_TUPLE_XL
         // ================= TWO PHASE COMMIT FOR TAKE OPERATIONS =================
 
         /// <summary>
-        /// Remove the selected tuple from the intersection.
-        /// </summary>
-        /// <param name="enlistment"></param>
-        public void Commit(Enlistment enlistment)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void InDoubt(Enlistment enlistment)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Prepares the take operation by locking only the items.
-        /// </summary>
-        /// <param name="preparingEnlistment"></param>
-        public void Prepare(PreparingEnlistment preparingEnlistment)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Unlock all previous lock items.
         /// </summary>
-        /// <param name="enlistment"></param>
-        public void Rollback(Enlistment enlistment)
+        public void Rollback(LockList locklist, int workerId)
         {
-            throw new NotImplementedException();
+            locklist.ReleaseAllLocks(workerId);
         }
 
     }

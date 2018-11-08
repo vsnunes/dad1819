@@ -165,7 +165,7 @@ namespace DIDA_CLIENT
             Tuple tup = TupleSelection(Intersection(_responseTake));
             Remove(tup);
             _requestId++;
-            return  null; 
+            return tup; 
         }
 
         public void Remove(Tuple tuple){

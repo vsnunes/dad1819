@@ -386,5 +386,70 @@ namespace DIDA_TUPLE_XL.Tests
             Assert.AreEqual(_tuple2, takeResult[0]);
 
         }
+
+        /// <summary>
+        /// A test to check for potencial deadlocks on take
+        /// This is a multithreading test.
+        /// Caution: This only test Take 1 Phase!
+        /// </summary>
+        [TestMethod(), Timeout(10000)]
+        public void TwoTakeOnThreadsTest()
+        {
+            _fields.Add("cat");
+            _fields.Add("white");
+            _fields2.Add("dog");
+            _fields2.Add("brown");
+            _tuple1 = new Tuple(_fields);
+            _tuple2 = new Tuple(_fields2);
+
+            Assert.AreEqual(0, _tupleSpace.ItemCount());
+            //write <cat,white>
+            _tupleSpace.write(1, 1, _tuple1);
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //lets delay the write in 1 second
+                Thread.Sleep(1000);
+                //write <dog, brown>
+                _tupleSpace.write(2, 1, _tuple2);
+                return; //just to ensure that we stop the thread
+            });
+
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //performs a take concurrently
+                _tupleSpace.take(3, 1, _tuple2);
+
+                return; //just to ensure that we stop the thread
+            });
+
+            Task.Run(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //performs a take concurrently
+                _tupleSpace.take(4, 1, _tuple2);
+
+                return; //just to ensure that we stop the thread
+            });
+
+            Assert.AreEqual(1, _tupleSpace.ItemCount());
+            //take <dog, brown> which will only exists 1 sec ahead!
+            List<Tuple> takeResult = null;
+            /*takeResult = _tupleSpace.take(1, 2, _tuple2);
+
+            //Should exists 2 items <cat, white> and <dog, brown>
+            //Caution: This is a 1 phase take test
+            Assert.AreEqual(2, _tupleSpace.ItemCount());
+
+            Assert.IsNotNull(takeResult);
+
+            Assert.AreEqual(1, takeResult.Count);
+
+            Assert.AreEqual(_tuple2, takeResult[0]);*/
+            Thread.Sleep(4000);
+        }
     }
 }
