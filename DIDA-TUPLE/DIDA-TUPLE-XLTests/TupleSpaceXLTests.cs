@@ -2,7 +2,6 @@
 using DIDA_TUPLE_XL;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,18 +44,18 @@ namespace DIDA_TUPLE_XL.Tests
             _fields2.Add("white");
             _tuple2 = new Tuple(_fields2);
 
-            ImmutableList<Tuple> list1 = ImmutableList.Create<Tuple>();
-            ImmutableList<Tuple> list2 = ImmutableList.Create<Tuple>();
+            List<Tuple> list1 = new List<Tuple>();
+            List<Tuple> list2 = new List<Tuple>();
 
-            list1 = list1.Add(_tuple1);
-            list2 = list2.Add(_tuple2);
+            list1.Add(_tuple1);
+            list2.Add(_tuple2);
 
             Assert.AreEqual(1, list1.Count);
             Assert.AreEqual(1, list2.Count);
 
-            ImmutableList<ImmutableList<Tuple>> listOfListsOfTuples = ImmutableList.Create<ImmutableList<Tuple>>();
-            listOfListsOfTuples = listOfListsOfTuples.Add(list1);
-            listOfListsOfTuples = listOfListsOfTuples.Add(list2);
+            List<List<Tuple>> listOfListsOfTuples = new List<List<Tuple>>();
+            listOfListsOfTuples.Add(list1);
+            listOfListsOfTuples.Add(list2);
 
             Assert.AreEqual(2, listOfListsOfTuples.Count);
 
@@ -86,30 +85,30 @@ namespace DIDA_TUPLE_XL.Tests
             _fields3.Add("white");
             _tuple3 = new Tuple(_fields3);
 
-            ImmutableList<Tuple> list1 = ImmutableList.Create<Tuple>();
-            ImmutableList<Tuple> list2 = ImmutableList.Create<Tuple>();
-            ImmutableList<Tuple> list3 = ImmutableList.Create<Tuple>();
+            List<Tuple> list1 = new List<Tuple>();
+            List<Tuple> list2 = new List<Tuple>();
+            List<Tuple> list3 = new List<Tuple>();
 
             //list1: [<cat, white>]
-            list1 = list1.Add(_tuple1);
+            list1.Add(_tuple1);
 
             Assert.AreEqual(1, list1.Count);
 
             //list2: [<cat, gray>, <cat, white>]
-            list2 = list2.Add(_tuple2);
-            list2 = list2.Add(_tuple3);
+            list2.Add(_tuple2);
+            list2.Add(_tuple3);
 
             Assert.AreEqual(2, list2.Count);
 
             //list3: [<cat, white>]
-            list3 = list3.Add(_tuple3);
+            list3.Add(_tuple3);
 
             Assert.AreEqual(1, list3.Count);
 
-            ImmutableList<ImmutableList<Tuple>> listOfListsOfTuples = ImmutableList.Create<ImmutableList<Tuple>>();
-            listOfListsOfTuples = listOfListsOfTuples.Add(list1);
-            listOfListsOfTuples = listOfListsOfTuples.Add(list2);
-            listOfListsOfTuples = listOfListsOfTuples.Add(list3);
+            List<List<Tuple>> listOfListsOfTuples = new List<List<Tuple>>();
+            listOfListsOfTuples.Add(list1);
+            listOfListsOfTuples.Add(list2);
+            listOfListsOfTuples.Add(list3);
 
             Assert.AreEqual(3, listOfListsOfTuples.Count);
 
@@ -139,34 +138,34 @@ namespace DIDA_TUPLE_XL.Tests
             _fields3.Add("brown");
             _tuple3 = new Tuple(_fields3);
 
-            ImmutableList<Tuple> list1 = ImmutableList.Create<Tuple>();
-            ImmutableList<Tuple> list2 = ImmutableList.Create<Tuple>();
-            ImmutableList<Tuple> list3 = ImmutableList.Create<Tuple>();
+            List<Tuple> list1 = new List<Tuple>();
+            List<Tuple> list2 = new List<Tuple>();
+            List<Tuple> list3 = new List<Tuple>();
 
             //list1: [<cat, white>, <cat, gray>]
-            list1 = list1.Add(_tuple1);
-            list1 = list1.Add(_tuple2);
+            list1.Add(_tuple1);
+            list1.Add(_tuple2);
 
             Assert.AreEqual(2, list1.Count);
 
             //list2: [<cat, gray>, <dog, brown>]
-            list2 = list2.Add(_tuple2);
-            list2 = list2.Add(_tuple3);
+            list2.Add(_tuple2);
+            list2.Add(_tuple3);
 
             Assert.AreEqual(2, list2.Count);
 
             //list3: [<dog, brown>, <dog, brown>, <dog, brown>, <cat, gray>]
-            list3 = list3.Add(_tuple3);
-            list3 = list3.Add(_tuple3);
-            list3 = list3.Add(_tuple3);
-            list3 = list3.Add(_tuple2);
+            list3.Add(_tuple3);
+            list3.Add(_tuple3);
+            list3.Add(_tuple3);
+            list3.Add(_tuple2);
 
             Assert.AreEqual(4, list3.Count);
 
-            ImmutableList<ImmutableList<Tuple>> listOfListsOfTuples = ImmutableList.Create<ImmutableList<Tuple>>();
-            listOfListsOfTuples = listOfListsOfTuples.Add(list1);
-            listOfListsOfTuples = listOfListsOfTuples.Add(list2);
-            listOfListsOfTuples = listOfListsOfTuples.Add(list3);
+            List<List<Tuple>> listOfListsOfTuples = new List<List<Tuple>>();
+            listOfListsOfTuples.Add(list1);
+            listOfListsOfTuples.Add(list2);
+            listOfListsOfTuples.Add(list3);
 
             Assert.AreEqual(3, listOfListsOfTuples.Count);
 

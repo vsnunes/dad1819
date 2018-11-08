@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,7 +33,7 @@ namespace DIDA_LIBRARY
         /// <param name="requestId">The request identification of this operation.</param>
         /// <param name="tuple">A tuple to take.</param>
         /// <returns>A list of taples matching the param.</returns>
-        ImmutableList<Tuple> take(int workerId, int requestId, Tuple tuple);
+        List<Tuple> take(int workerId, int requestId, Tuple tuple);
 
         /// <summary>
         /// Gets the number of itens in the tupple space.

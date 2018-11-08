@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
@@ -38,7 +37,7 @@ namespace DIDA_CLIENT
         /// Delegate for Takes that require workerId, requestId and a tuple.
         /// Remeber: Take retrieves a list of potencial tuples to be removed
         /// </summary>
-        public delegate ImmutableList<Tuple> RemoteAsyncTakeDelegate(int workerId, int requestId, Tuple t);
+        public delegate List<Tuple> RemoteAsyncTakeDelegate(int workerId, int requestId, Tuple t);
 
         public FrontEndXL(int workerId) {
             _workerId = workerId; 
@@ -50,7 +49,7 @@ namespace DIDA_CLIENT
         /// </summary>
         private static Tuple _responseRead = null;
 
-        private static ImmutableList<ImmutableList<Tuple>> _responseTake = null;
+        private static List<List<Tuple>> _responseTake = null;
 
         public List<string> GetView()
         {
@@ -132,7 +131,7 @@ namespace DIDA_CLIENT
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
 
-            _responseTake = ImmutableList.Create<ImmutableList<Tuple>>();
+            _responseTake = new List<List<Tuple>>();
             foreach (string serverPath in actualView)
             {
                 try
@@ -204,10 +203,10 @@ namespace DIDA_CLIENT
             return l.ElementAt(0);
         }
 
-        public static IEnumerable<Tuple> Intersection(ImmutableList<ImmutableList<Tuple>> list) {
+        public static IEnumerable<Tuple> Intersection(List<List<Tuple>> list) {
             //Intersection of an empty list
             if (list.Count == 0)
-                return ImmutableList.Create<Tuple>();
+                return new List<Tuple>();
             else if (list.Count == 1)
                 return list[0];
 

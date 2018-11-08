@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,18 +12,18 @@ namespace DIDA_TUPLE_XL
 {
     public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL
     {
-        private ImmutableList<Tuple> _tupleSpace;
+        private List<Tuple> _tupleSpace;
         private Log _log;
 
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
-        private ImmutableList<Tuple> _TakeMatches;
+        private List<Tuple> _TakeMatches;
 
         public TupleSpaceXL()
         {
             _view = View.Instance;
-            _tupleSpace = ImmutableList.Create<Tuple>();
+            _tupleSpace = new List<Tuple>();
         }
 
         public Log Log { get => _log; set => _log = value; }
@@ -76,7 +75,7 @@ namespace DIDA_TUPLE_XL
         /// </summary>
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
-        public ImmutableList<Tuple> take(int workerId, int requestId, Tuple tuple)
+        public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {           
             //Just for restart for.
             /*Supose that the Enter blocked on a item.
@@ -87,7 +86,7 @@ namespace DIDA_TUPLE_XL
 
             do
             {
-                _TakeMatches = ImmutableList.Create<Tuple>();
+                _TakeMatches = new List<Tuple>();
                 foreach (Tuple t in _tupleSpace)
                 {
                     hadBreak = false;
