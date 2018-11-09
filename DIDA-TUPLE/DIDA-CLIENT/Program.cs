@@ -56,7 +56,6 @@ namespace DIDA_CLIENT
                     Console.WriteLine("Tuple received: " + frontEnd.Take(t));
                     break;
             }
-            Console.ReadLine();
         }
     }
 }
