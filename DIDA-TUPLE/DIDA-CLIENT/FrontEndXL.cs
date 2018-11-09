@@ -21,7 +21,11 @@ namespace DIDA_CLIENT
         private int _workerId;
         private int _requestId = 0;
 
-        private static AutoResetEvent[] handles = new AutoResetEvent[1];
+        private static AutoResetEvent[] readHandles;
+
+        private static AutoResetEvent[] takeHandles;
+
+        private static Int32 takeCounter = 0;
 
         /// <summary>
         /// Delegate for Reading Operations
@@ -43,7 +47,18 @@ namespace DIDA_CLIENT
 
         public FrontEndXL(int workerId) {
             _workerId = workerId;
-            handles[0] = new AutoResetEvent(false);
+            
+            int number_servers = this.GetView().Count();
+
+            readHandles = new AutoResetEvent[1];
+            takeHandles = new AutoResetEvent[number_servers];
+
+            readHandles[0] = new AutoResetEvent(false);
+
+            for (int i = 0; i < number_servers; i++)
+            {
+                takeHandles[i] = new AutoResetEvent(false);
+            }
 
         }
 
@@ -74,10 +89,14 @@ namespace DIDA_CLIENT
         public static void CallbackRead(IAsyncResult ar)
         {
             RemoteAsyncReadDelegate del = (RemoteAsyncReadDelegate)((AsyncResult)ar).AsyncDelegate;
-            if (_responseRead == null)
+            lock (ReadLock)
             {
-                _responseRead = del.EndInvoke(ar);
-                handles[0].Set();
+                //Only care about one reply, ignore others
+                if (_responseRead == null)
+                {
+                    _responseRead = del.EndInvoke(ar);
+                    readHandles[0].Set();
+                }
             }
         }
 
@@ -90,7 +109,7 @@ namespace DIDA_CLIENT
             RemoteAsyncTakeDelegate del = (RemoteAsyncTakeDelegate)((AsyncResult)ar).AsyncDelegate;
             lock(TakeLock) {
                 _responseTake.Add(del.EndInvoke(ar));
-                Monitor.Pulse(TakeLock);
+                takeHandles[takeCounter++].Set();
             }
             
         }
@@ -132,7 +151,7 @@ namespace DIDA_CLIENT
                 {
                     Console.WriteLine("** FRONTEND READ: Not yet receive any reply let me wait...");
 
-                    WaitHandle.WaitAny(handles);
+                    WaitHandle.WaitAny(readHandles);
                    
                 }
             
@@ -149,39 +168,37 @@ namespace DIDA_CLIENT
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
 
-            lock(TakeLock) {
-            
-                _responseTake = new List<List<Tuple>>();
-                foreach (string serverPath in actualView)
+                        
+            _responseTake = new List<List<Tuple>>();
+            foreach (string serverPath in actualView)
+            {
+                try
                 {
-                    try
-                    {
-                        tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                        tupleSpace.ItemCount(); //just to check availability of the server
-                    }
-                    catch (Exception) { tupleSpace = null; }
-                    if (tupleSpace != null)
-                        serversObj.Add(tupleSpace);
+                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                    tupleSpace.ItemCount(); //just to check availability of the server
                 }
-
-                foreach (ITupleSpaceXL server in serversObj)
-                {
-                    try
-                    {
-                        RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
-                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
-                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
-                    }
-                    catch (Exception) { }
-                }
-
-                //miguel: this only works in perfect case
-                //TODO: One machine belonging to the view has just crashed
-                while (_responseTake.Count() != serversObj.Count())
-                {
-                    Monitor.Wait(TakeLock);
-                }
+                catch (Exception) { tupleSpace = null; }
+                if (tupleSpace != null)
+                    serversObj.Add(tupleSpace);
             }
+
+            foreach (ITupleSpaceXL server in serversObj)
+            {
+                try
+                {
+                    RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
+                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                }
+                catch (Exception) { }
+            }
+
+            //miguel: this only works in perfect case
+            //TODO: One machine belonging to the view has just crashed
+
+            WaitHandle.WaitAll(takeHandles);
+
+            
             //Performs the intersection of all responses and decide using TupleSelection
             Tuple tup = TupleSelection(Intersection(_responseTake));
             
@@ -243,11 +260,9 @@ namespace DIDA_CLIENT
                 return list[0];
 
             IEnumerable<Tuple> intersectSet = list.ElementAt(0);
-            Console.WriteLine(intersectSet.ElementAt(0));
 
             for (int i = 1; i < list.Count(); i++) {
                 intersectSet = list.ElementAt(i).Intersect(intersectSet, new TupleComparator());
-                Console.WriteLine(intersectSet.Count());
             }
 
 
