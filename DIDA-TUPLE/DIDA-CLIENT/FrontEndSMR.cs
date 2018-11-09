@@ -9,7 +9,7 @@ namespace DIDA_CLIENT
 {
     class FrontEndSMR : IFrontEnd
     {
-        string[] file = File.ReadAllLines("../../serverList.txt");
+        string[] file = File.ReadAllLines("../../serverListSMR.txt");
         List<string> servers = new List<string>();
 
         public FrontEndSMR()

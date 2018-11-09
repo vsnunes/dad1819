@@ -30,8 +30,6 @@ namespace DIDA_TUPLE_XL
 
         public Log Log { get => _log; set => _log = value; }
 
-        
-
         public Tuple read(Tuple tuple)
         {
             Tuple result = null;
@@ -52,21 +50,31 @@ namespace DIDA_TUPLE_XL
                         Monitor.Wait(this);
                 }
             }
-
+            Console.WriteLine("** XL READ: Just read " + result);
             return result;
         }
 
         public void remove(Tuple tuple)
         {
-            //UnLock all previews locked tuples
-            /*foreach (Tuple t in _TakeMatches)
+            Tuple match = null;
+            lock (_tupleSpace)
             {
-                Monitor.Pulse(t);
-            }*/
+                foreach (Tuple t in _tupleSpace)
+                {
+                    if (t.Equals(tuple))
+                    {
+                        match = t;
+                        break; //just found what i want to remove
+                    }
 
-            //Just remove the selected tuple
-            _tupleSpace.Remove(tuple);
+                }
 
+                if (match != null)
+                {
+                    _tupleSpace.Remove(match);
+                }
+            }
+            Console.WriteLine("** XL REMOVE: Just removed " + tuple);
         }
 
         public int ItemCount()
@@ -115,7 +123,7 @@ namespace DIDA_TUPLE_XL
 
 
 
-
+            Console.WriteLine("** XL TAKE-PHASE1");
             return result;
         }
 
@@ -128,7 +136,7 @@ namespace DIDA_TUPLE_XL
                 _tupleSpace.Add(tuple);
                 Monitor.Pulse(this);
             }
-            Console.WriteLine("** EXECUTE_WRITE: " + tuple);
+            Console.WriteLine("** XL WRITE: " + tuple);
         }
 
 
@@ -140,6 +148,7 @@ namespace DIDA_TUPLE_XL
         public void Rollback(LockList locklist, int workerId)
         {
             locklist.ReleaseAllLocks(workerId);
+            Console.WriteLine("** XL ROLLBACK: Rollback this workerId " + workerId);
         }
 
     }

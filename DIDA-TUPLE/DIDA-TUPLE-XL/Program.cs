@@ -13,19 +13,32 @@ namespace DIDA_TUPLE_XL
     class Program
     {
         static void Main(string[] args)
-        { 
-            TcpChannel channel = new TcpChannel(8087);
-            ChannelServices.RegisterChannel(channel, false);
+        {
 
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(TupleSpaceXL),
-                "DIDA-TUPLE-XL",
-                WellKnownObjectMode.Singleton);
+            TcpChannel channel;
 
-            System.Console.WriteLine("DIDA-TUPLE-XL Server Started!");
-            System.Console.WriteLine("---------------");
-            System.Console.WriteLine("<Enter> to exit...");
-            System.Console.ReadLine();
+            if (args.Count() > 0)
+            {
+                channel = new TcpChannel(Int32.Parse(args[0]));
+            }
+            else
+            {
+                channel = new TcpChannel(8088);
+
+                ChannelServices.RegisterChannel(channel, false);
+
+            }
+                RemotingConfiguration.RegisterWellKnownServiceType(
+                    typeof(TupleSpaceXL),
+                    "DIDA-TUPLE-XL",
+                    WellKnownObjectMode.Singleton);
+            
+
+                System.Console.WriteLine("DIDA-TUPLE-XL Server Started!");
+                System.Console.WriteLine("---------------");
+                System.Console.WriteLine("<Enter> to exit...");
+                System.Console.ReadLine();
+            
         }
-}
+    }
 }

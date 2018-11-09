@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DIDA_LIBRARY;
@@ -16,7 +17,6 @@ namespace DIDA_CLIENT
         private static Object ReadLock = new Object();
 
         private static Object TakeLock = new Object();
-
 
         private int _workerId;
         private int _requestId = 0;
@@ -40,7 +40,8 @@ namespace DIDA_CLIENT
         public delegate List<Tuple> RemoteAsyncTakeDelegate(int workerId, int requestId, Tuple t);
 
         public FrontEndXL(int workerId) {
-            _workerId = workerId; 
+            _workerId = workerId;
+        
         }
 
         /// <summary>
@@ -53,7 +54,14 @@ namespace DIDA_CLIENT
 
         public List<string> GetView()
         {
-            return View.Instance.Servers;
+            string[] file = File.ReadAllLines("../../serverListXL.txt");
+            List<string> servers = new List<string>();
+
+            foreach (string i in file)
+            {
+                servers.Add(i);
+            }      
+            return servers;
         }
 
         /// <summary>
@@ -66,7 +74,8 @@ namespace DIDA_CLIENT
             if (_responseRead == null)
             {
                 _responseRead = del.EndInvoke(ar);
-                Monitor.Pulse(ReadLock);
+                Monitor.Exit(ReadLock);
+                Console.WriteLine("** FRONTEND READ CallBack: Pulse ReadLock Just Now!");
             }
         }
 
@@ -91,35 +100,45 @@ namespace DIDA_CLIENT
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
-            //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
-            {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
 
-            foreach(ITupleSpaceXL server in serversObj)
-            {
-                try
+                //save remoting objects of all members of the view
+                foreach (string serverPath in actualView)
                 {
-                    RemoteAsyncReadDelegate RemoteDel = new RemoteAsyncReadDelegate(server.read);
-                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
+                    try
+                    {
+                        tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                        tupleSpace.ItemCount(); //just to check availability of the server
+                    }
+                    catch (Exception) { tupleSpace = null; }
+                    if (tupleSpace != null)
+                        serversObj.Add(tupleSpace);
                 }
-                catch (Exception) { }
-            }
+                
 
-            while(_responseRead == null)
-            {
-                Monitor.Wait(ReadLock);
-            }
+                foreach (ITupleSpaceXL server in serversObj)
+                {
+                    try
+                    {
+                        RemoteAsyncReadDelegate RemoteDel = new RemoteAsyncReadDelegate(server.read);
+                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
+                        IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
+                    }
+                    catch (Exception) { Console.WriteLine("** FRONTEND READ: Cannot invoke read on server!"); }
+                }
+
+                while (_responseRead == null)
+                {
+                    Console.WriteLine("** FRONTEND READ: Not yet receive any reply let me wait...");
+
+                    Monitor.Enter(ReadLock);
+                    if (_responseRead == null)
+                        Console.WriteLine("** FRONTEND READ: Just receive NULL");
+                    else
+                        Console.WriteLine("** FRONTEND READ: Just receive this: " + _responseRead);
+                }
+            
             _requestId++;
+            Console.WriteLine("** FRONTEND READ: Here is a response: " + _responseRead);
             return _responseRead;
         }
 
@@ -131,40 +150,51 @@ namespace DIDA_CLIENT
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
 
-            _responseTake = new List<List<Tuple>>();
-            foreach (string serverPath in actualView)
-            {
-                try
+            lock(TakeLock) {
+            
+                _responseTake = new List<List<Tuple>>();
+                foreach (string serverPath in actualView)
                 {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
+                    try
+                    {
+                        tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                        tupleSpace.ItemCount(); //just to check availability of the server
+                    }
+                    catch (Exception) { tupleSpace = null; }
+                    if (tupleSpace != null)
+                        serversObj.Add(tupleSpace);
                 }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
 
-            foreach (ITupleSpaceXL server in serversObj)
-            {
-                try
+                foreach (ITupleSpaceXL server in serversObj)
                 {
-                    RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
-                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                    try
+                    {
+                        RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
+                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
+                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                    }
+                    catch (Exception) { }
                 }
-                catch (Exception) { }
-            }
 
-            //miguel: this only works in perfect case
-            //TODO: One machine belonging to the view has just crashed
-            while (_responseTake.Count() != serversObj.Count())
-            {
-                Monitor.Wait(TakeLock);
+                //miguel: this only works in perfect case
+                //TODO: One machine belonging to the view has just crashed
+                while (_responseTake.Count() != serversObj.Count())
+                {
+                    Monitor.Wait(TakeLock);
+                }
             }
-
+            //Performs the intersection of all responses and decide using TupleSelection
             Tuple tup = TupleSelection(Intersection(_responseTake));
-            Remove(tup);
+            
+            //Tuple tup is now selected lets remove
+            if (tup != null)
+                Remove(tup);
             _requestId++;
+
+            if (tup != null)
+                Console.WriteLine("** FRONTEND TAKE: Here is a response: " + tup);
+            else
+                Console.WriteLine("** FRONTEND TAKE: Here is a NULL response");
             return tup; 
         }
 
@@ -195,11 +225,14 @@ namespace DIDA_CLIENT
                 }
                 catch (Exception) { }
             }
+            Console.WriteLine("** FRONTEND REMOVE: Just removed " + tuple);
         }
 
         //Selects a tuple do initiate the second phase of take
         private static Tuple TupleSelection(IEnumerable<Tuple> l)
         {
+            if (l.Count() == 0)
+                return null;
             return l.ElementAt(0);
         }
 
@@ -236,7 +269,7 @@ namespace DIDA_CLIENT
                     tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
                     tupleSpace.ItemCount(); //just to check availability of the server
                 }
-                catch (Exception) { tupleSpace = null; }
+                catch (Exception) { tupleSpace = null; Console.WriteLine("** FRONTEND WRITE: Could not connected to server at " + serverPath);  }
                 if (tupleSpace != null)
                     serversObj.Add(tupleSpace);
             }
@@ -248,9 +281,10 @@ namespace DIDA_CLIENT
                     RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
                 }
-                catch (Exception) { }
+                catch (Exception) { Console.WriteLine("** FRONTEND WRITE: Could not call write on server"); }
             }
             _requestId++;
+            Console.WriteLine("** FRONTEND WRITE: Just write " + tuple);
         }
     }
 

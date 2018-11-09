@@ -422,7 +422,6 @@ namespace DIDA_TUPLE_XL.Tests
                 Thread.CurrentThread.IsBackground = true;
                 //performs a take concurrently
                 _tupleSpace.take(3, 1, _tuple2);
-
                 return; //just to ensure that we stop the thread
             });
 
@@ -431,7 +430,6 @@ namespace DIDA_TUPLE_XL.Tests
                 Thread.CurrentThread.IsBackground = true;
                 //performs a take concurrently
                 _tupleSpace.take(4, 1, _tuple2);
-
                 return; //just to ensure that we stop the thread
             });
 
