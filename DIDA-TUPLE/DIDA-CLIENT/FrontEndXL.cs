@@ -21,6 +21,8 @@ namespace DIDA_CLIENT
         private int _workerId;
         private int _requestId = 0;
 
+        private static AutoResetEvent[] handles = new AutoResetEvent[1];
+
         /// <summary>
         /// Delegate for Reading Operations
         /// </summary>
@@ -41,7 +43,8 @@ namespace DIDA_CLIENT
 
         public FrontEndXL(int workerId) {
             _workerId = workerId;
-        
+            handles[0] = new AutoResetEvent(false);
+
         }
 
         /// <summary>
@@ -74,8 +77,7 @@ namespace DIDA_CLIENT
             if (_responseRead == null)
             {
                 _responseRead = del.EndInvoke(ar);
-                Monitor.Exit(ReadLock);
-                Console.WriteLine("** FRONTEND READ CallBack: Pulse ReadLock Just Now!");
+                handles[0].Set();
             }
         }
 
@@ -130,11 +132,8 @@ namespace DIDA_CLIENT
                 {
                     Console.WriteLine("** FRONTEND READ: Not yet receive any reply let me wait...");
 
-                    Monitor.Enter(ReadLock);
-                    if (_responseRead == null)
-                        Console.WriteLine("** FRONTEND READ: Just receive NULL");
-                    else
-                        Console.WriteLine("** FRONTEND READ: Just receive this: " + _responseRead);
+                    WaitHandle.WaitAny(handles);
+                   
                 }
             
             _requestId++;
