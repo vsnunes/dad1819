@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DADTestClasses.cs" />
     <Compile Include="IFrontEnd.cs" />
     <Compile Include="ITotalOrder.cs" />
     <Compile Include="ITupleSpaceXL.cs" />

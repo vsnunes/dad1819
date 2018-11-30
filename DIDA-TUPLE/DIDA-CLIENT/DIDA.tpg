@@ -24,7 +24,7 @@ WHITESPACE        	-> @"\s+";
 
 Start -> Instruction Tuple EOF {return $Tuple;};
 Instruction -> READ | WRITE | TAKE;
-Tuple -> TUPLE_START Fields TUPLE_END {return new DIDA_LIBRARY.Tuple($Fields);};
+Tuple -> TUPLE_START Fields TUPLE_END {return new DIDA_LIBRARY.Tuple((List<object>)$Fields);};
 Fields -> Field (FIELD_SEP Field)* 
 {List<object> fd = new List<object>(); 
 	fd.Add($Field);
@@ -47,12 +47,43 @@ Field -> STRING | Function | NUMBER
 
 Function -> IDENTIFIER FUNCTION_START Args* FUNCTION_END
 {
-	/*if ($Args != null)
-		return new $IDENTIFIER($Args);*/
-	else return new $IDENTIFIER();
+	//NASTY HAMMER
+	int i = 0;
+	object[] args = null;
+	object one = null;
+	object two = null;
+	object three = null;
+
+	args= (object[])$Args;
+	one = args[0];
+	two = args[1];
+	if (args.Length >= 3)
+		three = args[3];
+
+	switch($IDENTIFIER) {
+		case "DADTestA":
+			return new DIDA_LIBRARY.DADTestA((int)one, (string)two);
+		case "DADTestB":
+			return new DIDA_LIBRARY.DADTestB((int)one, (string)two, (int)three);
+		case "DADTestC":
+			return new DIDA_LIBRARY.DADTestC((int)one, (string)two, (string)three);
+
+
+	}
+	return null;
 
 };
-Args -> Arg (FIELD_SEP Arg)*;
+Args -> Arg (FIELD_SEP Arg)*
+{
+	List<object> l = new List<object>();
+	l.Add($Arg);
+	int i = 1;
+	while ($Arg[i] != null) { 
+		l.Add($Arg[i++]);     
+    	}
+	return l.ToArray();
+
+};
 Arg -> STRING | Function | NUMBER
 {
 	if ($STRING != null)

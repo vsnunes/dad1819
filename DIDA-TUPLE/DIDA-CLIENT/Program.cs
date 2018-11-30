@@ -24,11 +24,11 @@ namespace DIDA_CLIENT
             // create the parser, and supply the scanner it should use
             Parser parser = new Parser(scanner);
 
-            ParseTree tree = parser.Parse("read <\"dog\", \"brown\">");
+            ParseTree tree = parser.Parse("read <\"dog\", \"brown\", DADTestA(1, \"Vitor\")>");
             Tuple t = (Tuple) tree.Eval(null);
             Console.WriteLine(t);
             Console.ReadLine();
-
+            
 
             //Display Client Usage Help if no arguments are given
             /*if (args.Count() == 0)

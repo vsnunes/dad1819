@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using System.Xml.Serialization;
 
@@ -237,10 +236,30 @@ namespace DIDA_CLIENT
 
         protected virtual object EvalFunction(ParseTree tree, params object[] paramlist)
         {
-            MethodInfo minvoke = this.GetType().GetMethod((string)this.GetValue(tree, TokenType.IDENTIFIER, 0));
-        	if (this.GetValue(tree, TokenType.Args, 0) != null)
-        		return minvoke.Invoke(this, (object[])this.GetValue(tree, TokenType.Args, 0));
-        	else return minvoke.Invoke(this, null);
+            //NASTY HAMMER
+        	int i = 0;
+        	object[] args = null;
+        	object one = null;
+        	object two = null;
+        	object three = null;
+        
+        	args= (object[])this.GetValue(tree, TokenType.Args, 0);
+        	one = args[0];
+        	two = args[1];
+        	if (args.Length >= 3)
+        		three = args[3];
+        
+        	switch(this.GetValue(tree, TokenType.IDENTIFIER, 0)) {
+        		case "DADTestA":
+        			return new DIDA_LIBRARY.DADTestA((int)one, (string)two);
+        		case "DADTestB":
+        			return new DIDA_LIBRARY.DADTestB((int)one, (string)two, (int)three);
+        		case "DADTestC":
+        			return new DIDA_LIBRARY.DADTestC((int)one, (string)two, (string)three);
+        
+        
+        	}
+        	return null;
         }
 
         protected virtual object EvalArgs(ParseTree tree, params object[] paramlist)
