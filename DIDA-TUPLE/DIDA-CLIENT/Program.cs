@@ -58,8 +58,6 @@ namespace DIDA_CLIENT
 
             string input = "";
             string operation;
-            ParseTree tree;
-            Tuple tuple = null;
 
             string prompt = "[CLIENT " + args[0] + " " + args[1] + "]";
 
@@ -89,6 +87,14 @@ namespace DIDA_CLIENT
             }
         }
 
+        /// <summary>
+        /// Execute an operation based on a parsed instruction.
+        /// </summary>
+        /// <param name="operation">Operation type (e.g. read, add, write, begin-repeat)</param>
+        /// <param name="input">A complete string instruction</param>
+        /// <param name="parser">An instance of the parser</param>
+        /// <param name="frontEnd">An instance of the frontEnd (could be SMR ou XL).</param>
+        /// <param name="prompt">A default string which are printed as prompt label.</param>
         private static void ExecuteOperation(string operation, string input, Parser parser, IFrontEnd frontEnd, string prompt)
         {
             Tuple tuple = null;
@@ -120,14 +126,14 @@ namespace DIDA_CLIENT
                         }
                         else
                         {
+                            List<string> inputs = new List<string>();
                             while (true)
                             {
-                                List<string> inputs = new List<string>();
                                 string innerInput;
                                 string innerOperation;
 
                                 Console.Write(prompt + " begin-repeat " + times + " > "); innerInput = Console.ReadLine();
-
+                                
                                 //Only when end is provided we execute the all body of begin-repeat
                                 if (innerInput == "end")
                                 {
@@ -142,10 +148,17 @@ namespace DIDA_CLIENT
                                     }
                                     break;
                                 }
-                                else
+                               else
                                 {
-                                    inputs.Add(innerInput);
+                                        innerOperation = innerInput.Split(' ')[0];
+                                    if (innerOperation == "begin-repeat")
+                                    {
+                                            ExecuteOperation(innerOperation, innerInput, parser, frontEnd, prompt + " begin-repeat " + times);
+                                    }
+                                    else inputs.Add(innerInput);
                                 }
+                                    
+                                
 
                             }
 
