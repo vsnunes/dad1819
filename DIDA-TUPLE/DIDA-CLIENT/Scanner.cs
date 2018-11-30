@@ -39,9 +39,9 @@ namespace DIDA_CLIENT
             Patterns.Add(TokenType.READ, regex);
             Tokens.Add(TokenType.READ);
 
-            regex = new Regex(@"write", RegexOptions.Compiled);
-            Patterns.Add(TokenType.WRITE, regex);
-            Tokens.Add(TokenType.WRITE);
+            regex = new Regex(@"add", RegexOptions.Compiled);
+            Patterns.Add(TokenType.ADD, regex);
+            Tokens.Add(TokenType.ADD);
 
             regex = new Regex(@"take", RegexOptions.Compiled);
             Patterns.Add(TokenType.TAKE, regex);
@@ -222,7 +222,7 @@ namespace DIDA_CLIENT
 
             //Terminal tokens:
             READ    = 10,
-            WRITE   = 11,
+            ADD     = 11,
             TAKE    = 12,
             TUPLE_START= 13,
             TUPLE_END= 14,

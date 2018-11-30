@@ -68,7 +68,7 @@ namespace DIDA_CLIENT
             ParseNode node = parent.CreateNode(scanner.GetToken(TokenType.Instruction), "Instruction");
             parent.Nodes.Add(node);
 
-            tok = scanner.LookAhead(TokenType.READ, TokenType.WRITE, TokenType.TAKE);
+            tok = scanner.LookAhead(TokenType.READ, TokenType.ADD, TokenType.TAKE);
             switch (tok.Type)
             {
                 case TokenType.READ:
@@ -81,13 +81,13 @@ namespace DIDA_CLIENT
                         return;
                     }
                     break;
-                case TokenType.WRITE:
-                    tok = scanner.Scan(TokenType.WRITE);
+                case TokenType.ADD:
+                    tok = scanner.Scan(TokenType.ADD);
                     n = node.CreateNode(tok, tok.ToString() );
                     node.Token.UpdateRange(tok);
                     node.Nodes.Add(n);
-                    if (tok.Type != TokenType.WRITE) {
-                        tree.Errors.Add(new ParseError("Unexpected token '" + tok.Text.Replace("\n", "") + "' found. Expected " + TokenType.WRITE.ToString(), 0x1001, 0, tok.StartPos, tok.StartPos, tok.Length));
+                    if (tok.Type != TokenType.ADD) {
+                        tree.Errors.Add(new ParseError("Unexpected token '" + tok.Text.Replace("\n", "") + "' found. Expected " + TokenType.ADD.ToString(), 0x1001, 0, tok.StartPos, tok.StartPos, tok.Length));
                         return;
                     }
                     break;

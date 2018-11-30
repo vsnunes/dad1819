@@ -15,6 +15,20 @@ namespace DIDA_CLIENT
 
         private static List<Tuple> responses = new List<Tuple>();
 
+        private static Tuple checkTupleSyntax(Parser parser, string input)
+        {
+            ParseTree tree = parser.Parse(input);
+            Tuple tuple = null;
+
+            tuple = (Tuple)tree.Eval(null);
+
+            if (tuple == null)
+            {
+                Console.WriteLine("### ERROR: Invalid tuple syntax representation");
+            }
+            return tuple;
+        }
+
         static void Main(string[] args)
         {
             IFrontEnd frontEnd = null;
@@ -24,14 +38,9 @@ namespace DIDA_CLIENT
             // create the parser, and supply the scanner it should use
             Parser parser = new Parser(scanner);
 
-            ParseTree tree = parser.Parse("read <\"dog\", \"brown\", DADTestA(1, \"Vitor\")>");
-            Tuple t = (Tuple) tree.Eval(null);
-            Console.WriteLine(t);
-            Console.ReadLine();
-            
 
             //Display Client Usage Help if no arguments are given
-            /*if (args.Count() == 0)
+            if (args.Count() == 0)
             {
                 Console.WriteLine("** Missing arguments");
                 Console.WriteLine("DIDA-CLIENT Usage:");
@@ -50,23 +59,116 @@ namespace DIDA_CLIENT
                 case "XL": frontEnd = new FrontEndXL(Int32.Parse(args[1])); break;
             }
 
-            List<Object> fields = new List<Object>();
-            fields.Add("cat");
-            fields.Add("white");
-            Tuple t = new Tuple(fields);
+            string input = "";
+            string operation;
+            ParseTree tree;
+            Tuple tuple = null;
 
-            switch (args[2])
+            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]";
+
+            while (true)
+            {
+                Console.Write(prompt + " > ");  input = Console.ReadLine();
+
+                if (input == "exit")
+                {
+                    return;
+                }
+                else if (input == "help")
+                {
+                    Console.WriteLine("Available commands: ");
+                    Console.WriteLine("add <\"A\",\"B\",\"C\">");
+                    Console.WriteLine("read <\"A\",\"B\",\"C\">");
+                    Console.WriteLine("take <\"A\",\"B\",\"C\">");
+                    Console.WriteLine("exit");
+                    Console.WriteLine();
+                    continue;
+                }
+
+                operation = input.Split(' ')[0];
+
+                ExecuteOperation(operation, input, parser, frontEnd, prompt);
+
+            }
+        }
+
+        private static void ExecuteOperation(string operation, string input, Parser parser, IFrontEnd frontEnd, string prompt)
+        {
+            Tuple tuple = null;
+            switch (operation)
             {
                 case "read":
-                    Console.WriteLine("Tuple received: " + frontEnd.Read(t));
+                    tuple = checkTupleSyntax(parser, input);
+
+                    Console.WriteLine("Tuple received: " + frontEnd.Read(tuple));
                     break;
-                case "write":
-                    frontEnd.Write(t);
+                case "add":
+                    tuple = checkTupleSyntax(parser, input);
+
+                    frontEnd.Write(tuple);
                     break;
                 case "take":
-                    Console.WriteLine("Tuple received: " + frontEnd.Take(t));
+                    tuple = checkTupleSyntax(parser, input);
+
+                    Console.WriteLine("Tuple received: " + frontEnd.Take(tuple));
                     break;
-            }*/
+
+                case "begin-repeat":
+                    try
+                    {
+                        int times = Int32.Parse(input.Split(' ')[1]);
+                        if (times <= 0)
+                        {
+                            Console.WriteLine("### ERROR: Invalid begin-repeat arg: must be a positive integer!");
+                        }
+                        else
+                        {
+                            while (true)
+                            {
+                                List<string> inputs = new List<string>();
+                                string innerInput;
+                                string innerOperation;
+
+                                Console.Write(prompt + " begin-repeat " + times + " > "); innerInput = Console.ReadLine();
+
+                                //Only when end is provided we execute the all body of begin-repeat
+                                if (innerInput == "end")
+                                {
+                                    for (int i = 0; i < times; i++)
+                                    {
+                                        foreach (string storedInput in inputs)
+                                        {
+                                            innerOperation = storedInput.Split(' ')[0];
+                                            ExecuteOperation(innerOperation, storedInput, parser, frontEnd, prompt);
+                                        }
+                                        
+                                    }
+                                    break;
+                                }
+                                else
+                                {
+                                    inputs.Add(innerInput);
+                                }
+
+                            }
+
+                        }
+
+
+
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("### ERROR: Invalid begin-repeat arg");
+                    }
+
+                    break;
+
+                default:
+                    Console.WriteLine("### ERROR: Invalid command");
+                    break;
+            }
         }
     }
 }

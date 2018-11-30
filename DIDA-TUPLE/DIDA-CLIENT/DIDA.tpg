@@ -4,7 +4,7 @@
 
 //Terminals
 READ		-> @"read";
-WRITE		-> @"write";
+ADD		-> @"add";
 TAKE		-> @"take";
 TUPLE_START	-> @"<";
 TUPLE_END	-> @">";
@@ -23,7 +23,7 @@ EOF               	-> @"^$";
 WHITESPACE        	-> @"\s+";
 
 Start -> Instruction Tuple EOF {return $Tuple;};
-Instruction -> READ | WRITE | TAKE;
+Instruction -> READ | ADD | TAKE;
 Tuple -> TUPLE_START Fields TUPLE_END {return new DIDA_LIBRARY.Tuple((List<object>)$Fields);};
 Fields -> Field (FIELD_SEP Field)* 
 {List<object> fd = new List<object>(); 
