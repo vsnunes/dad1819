@@ -79,7 +79,6 @@ namespace DIDA_TUPLE_XL
                     foreach (Tuple t in lockedTuples)
                     {
                         t.Locker = false;
-                        Monitor.Exit(t);
                     }
                 }
             }
