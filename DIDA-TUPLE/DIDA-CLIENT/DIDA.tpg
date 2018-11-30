@@ -1,0 +1,66 @@
+//Tiny Parser Generator v1.3
+//Copyright © Herre Kuijpers 2008-2012
+<% @TinyPG Namespace="DIDA_CLIENT" %>
+
+//Terminals
+READ		-> @"read";
+WRITE		-> @"write";
+TAKE		-> @"take";
+TUPLE_START	-> @"<";
+TUPLE_END	-> @">";
+FIELD_SEP	-> @",";
+IDENTIFIER    -> @"[a-zA-Z_][a-zA-Z0-9_]*";
+STRING        -> @"@?\""(\""\""|[^\""])*\""";
+NUMBER        -> @"[0-9]+";
+
+FUNCTION_START -> @"\(";
+FUNCTION_END  -> @"\)";
+
+EOF               	-> @"^$";
+
+
+[Skip]
+WHITESPACE        	-> @"\s+";
+
+Start -> Instruction Tuple EOF {return $Tuple;};
+Instruction -> READ | WRITE | TAKE;
+Tuple -> TUPLE_START Fields TUPLE_END {return new DIDA_LIBRARY.Tuple($Fields);};
+Fields -> Field (FIELD_SEP Field)* 
+{List<object> fd = new List<object>(); 
+	fd.Add($Field);
+	int i = 1;
+	while ($Field[i] != null) { 
+		fd.Add($Field[i++]);     
+    	}
+	return fd;
+
+};
+Field -> STRING | Function | NUMBER
+{
+	if ($STRING != null)
+		return $STRING;
+	else if($NUMBER != null)
+		return Convert.ToInt32($NUMBER);
+	else return $Function;
+	
+};
+
+Function -> IDENTIFIER FUNCTION_START Args* FUNCTION_END
+{
+	/*if ($Args != null)
+		return new $IDENTIFIER($Args);*/
+	else return new $IDENTIFIER();
+
+};
+Args -> Arg (FIELD_SEP Arg)*;
+Arg -> STRING | Function | NUMBER
+{
+	if ($STRING != null)
+		return $STRING;
+	else if($NUMBER != null)
+		return Convert.ToInt32($NUMBER);
+	else return $Function;
+	
+};
+
+

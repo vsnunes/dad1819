@@ -18,9 +18,20 @@ namespace DIDA_CLIENT
         static void Main(string[] args)
         {
             IFrontEnd frontEnd = null;
+            // create the scanner to use
+            Scanner scanner = new Scanner();
+
+            // create the parser, and supply the scanner it should use
+            Parser parser = new Parser(scanner);
+
+            ParseTree tree = parser.Parse("read <\"dog\", \"brown\">");
+            Tuple t = (Tuple) tree.Eval(null);
+            Console.WriteLine(t);
+            Console.ReadLine();
+
 
             //Display Client Usage Help if no arguments are given
-            if (args.Count() == 0)
+            /*if (args.Count() == 0)
             {
                 Console.WriteLine("** Missing arguments");
                 Console.WriteLine("DIDA-CLIENT Usage:");
@@ -55,7 +66,7 @@ namespace DIDA_CLIENT
                 case "take":
                     Console.WriteLine("Tuple received: " + frontEnd.Take(t));
                     break;
-            }
+            }*/
         }
     }
 }
