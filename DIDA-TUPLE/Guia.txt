@@ -1,0 +1,7 @@
+Para correr os servidores basta dar como argumento a porta em que deve correr (neste momento o projecto apenas corre em localhost por o endereço estar harcoded):
+    .\DIDA-TUPLE-SMR.exe [:port] ex: .\DIDA-TUPLE-SMR.exe 8088
+    .\DIDA-TUPLE-XL.exe [:port] ex: .\DIDA-TUPLE-XL.exe 8088
+
+Para correr os clientes (workerID não interessa para o SMR e pode ser qualquer valor):
+    .\DIDA-CLIENT.exe [:tupleType] [:workerID] [:operação] ex: .\DIDA-CLIENT.exe SMR 0 read
+
