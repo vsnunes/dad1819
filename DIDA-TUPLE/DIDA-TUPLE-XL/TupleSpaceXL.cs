@@ -103,24 +103,34 @@ namespace DIDA_TUPLE_XL
             {
                 lock (this)
                 {
-                    foreach (Tuple t in _tupleSpace)
+                    for(int i = 0; i < _tupleSpace.Count(); i++)
                     {
-                        lock (t)
+                        Tuple t = null;
+                        try
                         {
-                            if (t.Locker == false)
-                            {
-                                t.Locker = true;
-                                if (t.Equals(tuple))
-                                {
-                                    result.Add(t);
-                                }
-                                else
-                                {
-                                    t.Locker = false;
-                                }
-                            }
-
+                            t = _tupleSpace.ElementAt(i);
                         }
+                        catch (Exception e)
+                        {
+                            break;
+                        }
+                            lock (t)
+                            {
+                                if (t.Locker == false)
+                                {
+                                    t.Locker = true;
+                                    if (t.Equals(tuple))
+                                    {
+                                        result.Add(t);
+                                    }
+                                    else
+                                    {
+                                        t.Locker = false;
+                                    }
+                                }
+
+                            }
+                        
                     }
                     if (result.Count == 0)
                     {
