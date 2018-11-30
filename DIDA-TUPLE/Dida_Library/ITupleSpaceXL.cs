@@ -41,6 +41,6 @@ namespace DIDA_LIBRARY
         /// Executes second phase of take
         /// </summary>
         /// <param name="tuple"></param>
-        void remove(Tuple tuple);
+        void remove(Tuple choice, List<Tuple> lockedTuples);
     }
 }

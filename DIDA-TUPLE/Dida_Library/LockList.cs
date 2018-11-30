@@ -62,5 +62,24 @@ namespace DIDA_LIBRARY
 
             }
         }
+
+        public bool CheckTupleLock(Tuple tuple)
+        {
+            bool result = false;
+            lock(_lockList)
+            {
+                foreach (int workerId in _lockList.Keys)
+                {
+                    foreach(Tuple t in _lockList[workerId])
+                    {
+                        if (t.Equals(tuple))
+                            result = true;
+                    }
+                    if (result == true)
+                        break;
+                }
+            }
+            return result;
+        }
     }
 }

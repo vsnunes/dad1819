@@ -2,10 +2,8 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
-using System.Text;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
 
@@ -16,16 +14,13 @@ namespace DIDA_CLIENT
     {
         private static Object ReadLock = new Object();
 
-        private static Object TakeLock = new Object();
 
         private int _workerId;
         private int _requestId = 0;
-
+        private static int number_servers;
         private static AutoResetEvent[] readHandles;
 
-        private static AutoResetEvent[] takeHandles;
 
-        private static Int32 takeCounter = 0;
 
         /// <summary>
         /// Delegate for Reading Operations
@@ -43,22 +38,15 @@ namespace DIDA_CLIENT
         /// Delegate for Takes that require workerId, requestId and a tuple.
         /// Remeber: Take retrieves a list of potencial tuples to be removed
         /// </summary>
-        public delegate List<Tuple> RemoteAsyncTakeDelegate(int workerId, int requestId, Tuple t);
 
         public FrontEndXL(int workerId) {
             _workerId = workerId;
             
-            int number_servers = this.GetView().Count();
+            number_servers = this.GetView().Count();
 
             readHandles = new AutoResetEvent[1];
-            takeHandles = new AutoResetEvent[number_servers];
 
             readHandles[0] = new AutoResetEvent(false);
-
-            for (int i = 0; i < number_servers; i++)
-            {
-                takeHandles[i] = new AutoResetEvent(false);
-            }
 
         }
 
@@ -98,20 +86,6 @@ namespace DIDA_CLIENT
                     readHandles[0].Set();
                 }
             }
-        }
-
-        /// <summary>
-        /// Callback function to process take's server' replies
-        /// <param name="ar"A AsyncResult Delgate Object.</param>
-        /// </summary>
-        public static void CallbackTake(IAsyncResult ar)
-        {
-            RemoteAsyncTakeDelegate del = (RemoteAsyncTakeDelegate)((AsyncResult)ar).AsyncDelegate;
-            lock(TakeLock) {
-                _responseTake.Add(del.EndInvoke(ar));
-                takeHandles[takeCounter++].Set();
-            }
-            
         }
 
         public Tuple Read(Tuple tuple)
@@ -165,11 +139,19 @@ namespace DIDA_CLIENT
             List<string> actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
-            ITupleSpaceXL tupleSpace = null;
-            //save remoting objects of all members of the view
+            AutoResetEvent[] handlers = new AutoResetEvent[number_servers];
+            Thread[] threadPool = new Thread[number_servers];
 
-                        
-            _responseTake = new List<List<Tuple>>();
+            ITupleSpaceXL tupleSpace = null;
+
+            List<List<Tuple>> possibleTuples = new List<List<Tuple>>();
+            List<Tuple>[] pt = new List<Tuple>[3];
+            
+            for (int i = 0; i < number_servers; i++)
+            {
+                handlers[i] = new AutoResetEvent(false);
+            }
+
             foreach (string serverPath in actualView)
             {
                 try
@@ -182,39 +164,57 @@ namespace DIDA_CLIENT
                     serversObj.Add(tupleSpace);
             }
 
-            foreach (ITupleSpaceXL server in serversObj)
+            Thread task0 = new Thread(() =>
             {
-                try
+                lock (possibleTuples)
                 {
-                    RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
-                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                    List<Tuple> l = serversObj[0].take(_workerId, _requestId, tuple);
+                    pt[0] = l;
+                    possibleTuples.Add(l);
+                    handlers[0].Set();
                 }
-                catch (Exception) { }
+            });
+
+            Thread task1 = new Thread(() =>
+            {
+                lock (possibleTuples)
+                {
+                    List<Tuple> l = serversObj[1].take(_workerId, _requestId, tuple);
+                    pt[1] = l;
+                    possibleTuples.Add(l);
+                    handlers[1].Set();
+                }
+            });
+
+            Thread task2 = new Thread(() =>
+            {
+                lock (possibleTuples)
+                {
+                    List<Tuple> l = serversObj[2].take(_workerId, _requestId, tuple);
+                    pt[2] = l;
+                    possibleTuples.Add(l);
+                    handlers[2].Set();
+                }
+            });
+
+            task0.Start();
+            task1.Start();
+            task2.Start();
+
+            WaitHandle.WaitAll(handlers);
+
+            Tuple choice = TupleSelection(Intersection(possibleTuples));
+
+            //Remove object from the server
+            for (int i = 0; i < 3; i++)
+            {
+                serversObj[i].remove(choice, pt[i]);
             }
 
-            //miguel: this only works in perfect case
-            //TODO: One machine belonging to the view has just crashed
-
-            WaitHandle.WaitAll(takeHandles);
-
-            
-            //Performs the intersection of all responses and decide using TupleSelection
-            Tuple tup = TupleSelection(Intersection(_responseTake));
-            
-            //Tuple tup is now selected lets remove
-            if (tup != null)
-                Remove(tup);
-            _requestId++;
-
-            if (tup != null)
-                Console.WriteLine("** FRONTEND TAKE: Here is a response: " + tup);
-            else
-                Console.WriteLine("** FRONTEND TAKE: Here is a NULL response");
-            return tup; 
+            return choice;
         }
 
-        public void Remove(Tuple tuple){
+        /*public void Remove(Tuple tuple){
             List<string> actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
@@ -242,7 +242,7 @@ namespace DIDA_CLIENT
                 catch (Exception) { }
             }
             Console.WriteLine("** FRONTEND REMOVE: Just removed " + tuple);
-        }
+        }*/
 
         //Selects a tuple do initiate the second phase of take
         private static Tuple TupleSelection(IEnumerable<Tuple> l)

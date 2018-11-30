@@ -11,9 +11,13 @@ namespace DIDA_LIBRARY
     {
         private List<Object> _fields;
 
+        public bool Locker;
+
+
         public Tuple(List<Object> fields)
         {
             _fields = new List<object>();
+            Locker = false;
 
             foreach (Object obj in fields)
             {
