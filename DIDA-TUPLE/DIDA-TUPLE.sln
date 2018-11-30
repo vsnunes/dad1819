@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-TUPLE-SMRTests", "DIDA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-TUPLE-XLTests", "DIDA-TUPLE-XLTests\DIDA-TUPLE-XLTests.csproj", "{5DAA0B01-48C4-4801-B1D6-E7BDE238C189}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIDA-CLIENTTests", "DIDA-CLIENTTests\DIDA-CLIENTTests.csproj", "{45DE5649-3986-4504-9168-6C52FE4095C1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{5DAA0B01-48C4-4801-B1D6-E7BDE238C189}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DAA0B01-48C4-4801-B1D6-E7BDE238C189}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DAA0B01-48C4-4801-B1D6-E7BDE238C189}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45DE5649-3986-4504-9168-6C52FE4095C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45DE5649-3986-4504-9168-6C52FE4095C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45DE5649-3986-4504-9168-6C52FE4095C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45DE5649-3986-4504-9168-6C52FE4095C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

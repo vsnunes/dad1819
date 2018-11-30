@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
 
 namespace DIDA_CLIENT
 {
-    class Program
+    public class Program
     {
         private static List<string> servers = new List<string>();
 
@@ -150,7 +151,7 @@ namespace DIDA_CLIENT
                                 }
                                else
                                 {
-                                        innerOperation = innerInput.Split(' ')[0];
+                                    innerOperation = innerInput.Split(' ')[0];
                                     if (innerOperation == "begin-repeat")
                                     {
                                             ExecuteOperation(innerOperation, innerInput, parser, frontEnd, prompt + " begin-repeat " + times);
@@ -173,6 +174,27 @@ namespace DIDA_CLIENT
                         Console.WriteLine("### ERROR: Invalid begin-repeat arg");
                     }
 
+                    break;
+
+                case "wait":
+                    try
+                        {
+                            int seconds = Int32.Parse(input.Split(' ')[1]);
+                            if (seconds <= 0)
+                            {
+                                Console.WriteLine("### ERROR: Invalid wait arg: must be a positive number!");
+                            }
+                            else
+                            {
+                                Console.WriteLine("I'm waiting ...");
+                                Thread.Sleep(seconds * 1000);
+                                Console.WriteLine("Finished waiting!");
+                            }
+                    }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("### ERROR: Invalid wait arg");
+                        }
                     break;
 
                 default:

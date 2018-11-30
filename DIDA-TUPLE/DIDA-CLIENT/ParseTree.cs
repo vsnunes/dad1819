@@ -228,7 +228,7 @@ namespace DIDA_CLIENT
         protected virtual object EvalField(ParseTree tree, params object[] paramlist)
         {
             if (this.GetValue(tree, TokenType.STRING, 0) != null)
-        		return this.GetValue(tree, TokenType.STRING, 0);
+        		return ((string)(this.GetValue(tree, TokenType.STRING, 0))).TrimStart('"').TrimEnd('"');
         	else if(this.GetValue(tree, TokenType.NUMBER, 0) != null)
         		return Convert.ToInt32(this.GetValue(tree, TokenType.NUMBER, 0));
         	else return this.GetValue(tree, TokenType.Function, 0);
@@ -276,7 +276,7 @@ namespace DIDA_CLIENT
         protected virtual object EvalArg(ParseTree tree, params object[] paramlist)
         {
             if (this.GetValue(tree, TokenType.STRING, 0) != null)
-        		return this.GetValue(tree, TokenType.STRING, 0);
+        		return ((string)(this.GetValue(tree, TokenType.STRING, 0))).TrimStart('"').TrimEnd('"');
         	else if(this.GetValue(tree, TokenType.NUMBER, 0) != null)
         		return Convert.ToInt32(this.GetValue(tree, TokenType.NUMBER, 0));
         	else return this.GetValue(tree, TokenType.Function, 0);

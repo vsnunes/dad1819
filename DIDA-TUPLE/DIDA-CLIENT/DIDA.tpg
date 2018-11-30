@@ -38,7 +38,7 @@ Fields -> Field (FIELD_SEP Field)*
 Field -> STRING | Function | NUMBER
 {
 	if ($STRING != null)
-		return $STRING;
+		return ((string)($STRING)).TrimStart('"').TrimEnd('"');
 	else if($NUMBER != null)
 		return Convert.ToInt32($NUMBER);
 	else return $Function;
@@ -87,7 +87,7 @@ Args -> Arg (FIELD_SEP Arg)*
 Arg -> STRING | Function | NUMBER
 {
 	if ($STRING != null)
-		return $STRING;
+		return ((string)($STRING)).TrimStart('"').TrimEnd('"');
 	else if($NUMBER != null)
 		return Convert.ToInt32($NUMBER);
 	else return $Function;
