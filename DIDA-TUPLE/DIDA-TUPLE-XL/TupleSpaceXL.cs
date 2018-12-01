@@ -16,8 +16,7 @@ namespace DIDA_TUPLE_XL
         private List<Tuple> _tupleSpace;
         private Log _log;
 
-        private static object ReadLock = new object();
-        private static object TakeLock = new object();
+        private static object Lock = new object();
 
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
@@ -55,7 +54,7 @@ namespace DIDA_TUPLE_XL
                         }
                     }
                     if (result == null) //stil has not find any match
-                        Monitor.Wait(_tupleSpace);
+                        Monitor.Wait(_tupleSpace, new Random().Next(1, 50));
                 }
             }
             Console.WriteLine("** XL READ: Just read " + result);
@@ -65,6 +64,7 @@ namespace DIDA_TUPLE_XL
         public void remove(int workerId, Tuple choice)
         {
             Console.WriteLine("** START TAKE PHASE2 OF: " + choice);
+            
             lock (_tupleSpace)
             {
                 _lockList.ReleaseAllLocks(workerId);
@@ -89,16 +89,16 @@ namespace DIDA_TUPLE_XL
             Console.WriteLine("** STARTING TAKE PHASE1 OF: " + tuple);
             List<Tuple> matchingTuples;
 
-            lock(this)
-            {
-                matchingTuples = match(workerId, tuple);
-                while (matchingTuples == null || matchingTuples.Count() == 0)
+            
+                do
                 {
-                    matchingTuples = match(workerId, tuple);
-                    Monitor.Wait(this, new Random().Next(1, 10));
-                }
-                        
-            }
+                    lock (Lock)
+                    {
+                        matchingTuples = match(workerId, tuple);
+                        if (matchingTuples == null || matchingTuples.Count() == 0)
+                            Monitor.Wait(Lock, new Random().Next(1, 50));
+                    }
+                } while (matchingTuples == null || matchingTuples.Count() == 0);
                 
 
             Console.WriteLine("** FINISHED TAKE PHASE1 OF: " + tuple);
@@ -138,13 +138,13 @@ namespace DIDA_TUPLE_XL
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
 
-            lock (this)
+            lock (Lock)
             {
                 lock (_tupleSpace)
                 {
                     _tupleSpace.Add(tuple);
                 }
-                Monitor.PulseAll(this);
+                Monitor.PulseAll(Lock);
             }
 
             Console.WriteLine("** XL WRITE: " + tuple);

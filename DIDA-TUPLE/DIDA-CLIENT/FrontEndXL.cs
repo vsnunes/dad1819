@@ -30,6 +30,16 @@ namespace DIDA_CLIENT
             getServersProxy();
         }
 
+        //Just for testing purposes
+        public FrontEndXL(int workerId, bool debugMode)
+        {
+            _workerId = workerId;
+
+            number_servers = this.GetView().Count();
+            actualView = this.GetView();
+            
+        }
+
         public void getServersProxy()
         {
             serversObj = new List<ITupleSpaceXL>();

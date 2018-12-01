@@ -28,7 +28,7 @@ namespace DIDA_TUPLE_XL.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            _frontEnd = new FrontEndXL(1);
+            _frontEnd = new FrontEndXL(1, true);
             _fields = new List<Object>();
             _fields2 = new List<Object>();
             _fields3 = new List<Object>();
@@ -345,7 +345,7 @@ namespace DIDA_TUPLE_XL.Tests
         /// This is a multithreading test.
         /// Caution: This only test Take 1 Phase!
         /// </summary>
-        [TestMethod()]
+        [TestMethod(), Timeout(5000)]
         public void takeNotAvailable1PhaseTest()
         {
             _fields.Add("cat");
@@ -392,7 +392,7 @@ namespace DIDA_TUPLE_XL.Tests
         /// This is a multithreading test.
         /// Caution: This only test Take 1 Phase!
         /// </summary>
-        [TestMethod(), Timeout(10000)]
+        [TestMethod(), Timeout(4000)]
         public void TwoTakeOnThreadsTest()
         {
             _fields.Add("cat");
@@ -407,35 +407,46 @@ namespace DIDA_TUPLE_XL.Tests
             _tupleSpace.write(1, 1, _tuple1);
             Assert.AreEqual(1, _tupleSpace.ItemCount());
 
-            Task.Run(() =>
+            Task t0 = new Task(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
                 //lets delay the write in 1 second
                 Thread.Sleep(1000);
                 //write <dog, brown>
                 _tupleSpace.write(2, 1, _tuple2);
+                Thread.Sleep(1000);
+                _tupleSpace.write(2, 2, _tuple2);
                 return; //just to ensure that we stop the thread
             });
 
-            Task.Run(() =>
+            Task t1 = new Task(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
                 //performs a take concurrently
                 _tupleSpace.take(3, 1, _tuple2);
+                _tupleSpace.remove(3, _tuple2);
                 return; //just to ensure that we stop the thread
             });
 
-            Task.Run(() =>
+            Task t2 = new Task(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
                 //performs a take concurrently
                 _tupleSpace.take(4, 1, _tuple2);
+                _tupleSpace.remove(4, _tuple2);
                 return; //just to ensure that we stop the thread
             });
 
+            t0.Start();
+            t1.Start();
+            t2.Start();
+
+            t0.Wait();
+            t1.Wait();
+            t2.Wait();
+
             Assert.AreEqual(1, _tupleSpace.ItemCount());
             //take <dog, brown> which will only exists 1 sec ahead!
-            List<Tuple> takeResult = null;
             /*takeResult = _tupleSpace.take(1, 2, _tuple2);
 
             //Should exists 2 items <cat, white> and <dog, brown>
@@ -447,10 +458,9 @@ namespace DIDA_TUPLE_XL.Tests
             Assert.AreEqual(1, takeResult.Count);
 
             Assert.AreEqual(_tuple2, takeResult[0]);*/
-            Thread.Sleep(4000);
         }
 
-        [TestMethod(), Timeout(15000)]
+        [TestMethod(), Timeout(5000)]
         public void ConcurrentAddTakeTest()
         {
             _fields.Add("1");
@@ -463,15 +473,14 @@ namespace DIDA_TUPLE_XL.Tests
             Task t0 = new Task(() =>
             {
                 Thread.CurrentThread.IsBackground = true;
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
                 for (int i = 0; i < 100; i++)
                 {
                     //add <"1">
                     _tupleSpace.write(1, 1 + i, _tuple1);
-                    Console.WriteLine("1 -> Just write 1 " + i);
                     //take <"2">
                     _tupleSpace.take(1, 2 + i, _tuple2);
-                    Console.WriteLine("1 -> Just take 2 " + i);
+                    _tupleSpace.remove(1, _tuple2);
                 }
               
                 return; //just to ensure that we stop the thread
@@ -484,10 +493,9 @@ namespace DIDA_TUPLE_XL.Tests
                 {
                     //add <"2">
                     _tupleSpace.write(2, 1 + i, _tuple2);
-                    Console.WriteLine("2 -> Just write 2 " + i);
                     //take <"1">
                     _tupleSpace.take(2, 2 + i, _tuple1);
-                    Console.WriteLine("2 -> Just take 1 " + i);
+                    _tupleSpace.remove(2, _tuple1);
                 }
                 return; //just to ensure that we stop the thread
             });
