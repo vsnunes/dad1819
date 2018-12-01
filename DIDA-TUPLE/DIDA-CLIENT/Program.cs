@@ -63,32 +63,8 @@ namespace DIDA_CLIENT
             string input = "";
             string operation;
 
-            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]";
+            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]"; 
 
-            /*while (true)
-            {
-                Console.Write(prompt + " > ");  input = Console.ReadLine();
-
-                if (input == "exit")
-                {
-                    return;
-                }
-                else if (input == "help")
-                {
-                    Console.WriteLine("Available commands: ");
-                    Console.WriteLine("add <\"A\",\"B\",\"C\">");
-                    Console.WriteLine("read <\"A\",\"B\",\"C\">");
-                    Console.WriteLine("take <\"A\",\"B\",\"C\">");
-                    Console.WriteLine("exit");
-                    Console.WriteLine();
-                    continue;
-                }
-
-                operation = input.Split(' ')[0];
-
-                ExecuteOperation(operation, input, parser, frontEnd, prompt);
-
-            }*/
             while (true)
             {
                 _counter = 0;
@@ -173,8 +149,6 @@ namespace DIDA_CLIENT
                             {
                                 string innerInput = lines[_counter];
                                 string innerOperation;
-
-                                //Console.Write(prompt + " begin-repeat " + times + " > "); innerInput = Console.ReadLine();
                                 
                                 //Only when end is provided we execute the all body of begin-repeat
                                 if (innerInput == "end-repeat")
