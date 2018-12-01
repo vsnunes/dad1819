@@ -57,67 +57,46 @@ namespace DIDA_CLIENT
             switch (args[0])
             {
                 case "SMR": frontEnd = new FrontEndSMR(); break;
-                case "XL":
-                    Console.WriteLine("Just looking for available servers ...");
-                    frontEnd = new FrontEndXL(Int32.Parse(args[1])); break;
-            }
-
-            string scriptFile = "";
-
-            if (args.Length > 2)
-            {
-                scriptFile = args[2];
-                Console.WriteLine("You have loaded a script file: " + scriptFile);
+                case "XL": frontEnd = new FrontEndXL(Int32.Parse(args[1])); break;
             }
 
             string input = "";
             string operation;
 
-            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]"; 
+            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]";
 
             while (true)
             {
-                
-                if (scriptFile != "")
+                _counter = 0;
+                Console.Write(prompt + " insert script file > "); input = Console.ReadLine();
+                if (input == "exit")
                 {
-                    try
-                    {
-                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-CLIENT/" + scriptFile);
-                        lines = File.ReadAllLines(path);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
-                        break;
-                    }
-                    _counter = 0;
-                    while (_counter < lines.Count())
-                    {
-                        operation = lines[_counter].Split(' ')[0];
-                        ExecuteOperation(operation, lines[_counter], parser, frontEnd, prompt);
-                    }
+                    return;
                 }
-                else
+                else if (input == "help")
                 {
-                    
-                    Console.Write(prompt + " > "); input = Console.ReadLine();
-                    if (input == "exit")
-                    {
-                        return;
-                    }
-                    else if (input == "help")
-                    {
-                        Console.WriteLine("Available commands: ");
-                        Console.WriteLine("add <\"A\",\"B\",\"C\">");
-                        Console.WriteLine("read <\"A\",\"B\",\"C\">");
-                        Console.WriteLine("take <\"A\",\"B\",\"C\">");
-                        Console.WriteLine("exit");
-                        Console.WriteLine();
-                        continue;
-                    }
-
-                    operation = input.Split(' ')[0];
-                    ExecuteOperation(operation, input, parser, frontEnd, prompt);
+                    Console.WriteLine("Available commands: ");
+                    Console.WriteLine("add <\"A\",\"B\",\"C\">");
+                    Console.WriteLine("read <\"A\",\"B\",\"C\">");
+                    Console.WriteLine("take <\"A\",\"B\",\"C\">");
+                    Console.WriteLine("exit");
+                    Console.WriteLine();
+                    continue;
+                }
+                try
+                {
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
+                    lines = File.ReadAllLines(path);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
+                    continue;
+                }
+                while (_counter < lines.Count())
+                {
+                    operation = lines[_counter].Split(' ')[0];
+                    ExecuteOperation(operation, lines[_counter], parser, frontEnd, prompt);
                 }
             }
         }
@@ -170,7 +149,7 @@ namespace DIDA_CLIENT
                             {
                                 string innerInput = lines[_counter];
                                 string innerOperation;
-                                
+
                                 //Only when end is provided we execute the all body of begin-repeat
                                 if (innerInput == "end-repeat")
                                 {
@@ -181,17 +160,17 @@ namespace DIDA_CLIENT
                                             innerOperation = storedInput.Split(' ')[0];
                                             ExecuteOperation(innerOperation, storedInput, parser, frontEnd, prompt);
                                         }
-                                        
+
                                     }
                                     break;
                                 }
                                 else
-                                {                                   
+                                {
                                     inputs.Add(innerInput);
                                     _counter++;
                                 }
-                                    
-                                
+
+
 
                             }
 
@@ -210,24 +189,24 @@ namespace DIDA_CLIENT
 
                 case "wait":
                     try
+                    {
+                        int seconds = Int32.Parse(input.Split(' ')[1]);
+                        if (seconds <= 0)
                         {
-                            int seconds = Int32.Parse(input.Split(' ')[1]);
-                            if (seconds <= 0)
-                            {
-                                Console.WriteLine("### ERROR: Invalid wait arg: must be a positive number!");
-                            }
-                            else
-                            {
-                                Console.WriteLine("I'm waiting ...");
-                                Thread.Sleep(seconds * 1000);
-                                Console.WriteLine("Finished waiting!");
-                                _counter++;
-                            }
-                    }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("### ERROR: Invalid wait arg");
+                            Console.WriteLine("### ERROR: Invalid wait arg: must be a positive number!");
                         }
+                        else
+                        {
+                            Console.WriteLine("I'm waiting ...");
+                            Thread.Sleep(seconds * 1000);
+                            Console.WriteLine("Finished waiting!");
+                            _counter++;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("### ERROR: Invalid wait arg");
+                    }
                     break;
 
                 default:
