@@ -99,11 +99,13 @@ namespace DIDA_TUPLE_XL
         {
             List<Tuple> result = new List<Tuple>();
 
-            while (result.Count == 0)
+            
+            lock (_tupleSpace)
             {
-                lock (this)
+
+                while (result.Count == 0)
                 {
-                    for(int i = 0; i < _tupleSpace.Count(); i++)
+                    for (int i = 0; i < _tupleSpace.Count(); i++)
                     {
                         Tuple t = null;
                         try
@@ -132,13 +134,16 @@ namespace DIDA_TUPLE_XL
                             }
                         
                     }
+
+
                     if (result.Count == 0)
                     {
-                        Monitor.Wait(this);
+                        Monitor.Wait(_tupleSpace);
                     }
                     
                 }
             }
+            
             return result;
         }
 
@@ -146,11 +151,12 @@ namespace DIDA_TUPLE_XL
         {
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
-            lock (this)
+            lock (_tupleSpace)
             {
                 _tupleSpace.Add(tuple);
-                Monitor.PulseAll(this);
+                Monitor.PulseAll(_tupleSpace);
             }
+
             Console.WriteLine("** XL WRITE: " + tuple);
         }
 

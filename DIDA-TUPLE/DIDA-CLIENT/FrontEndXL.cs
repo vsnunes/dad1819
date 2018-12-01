@@ -109,18 +109,6 @@ namespace DIDA_CLIENT
                         serversObj.Add(tupleSpace);
                 }
 
-
-            /*foreach (ITupleSpaceXL server in serversObj)
-            {
-                try
-                {
-                    RemoteAsyncReadDelegate RemoteDel = new RemoteAsyncReadDelegate(server.read);
-                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
-                }
-                catch (Exception) { Console.WriteLine("** FRONTEND READ: Cannot invoke read on server!"); }
-            }*/
-
             for (int i = 0; i < 3; i++)
             {
                 new Thread(() =>
@@ -226,37 +214,7 @@ namespace DIDA_CLIENT
 
             return choice;
         }
-
-        /*public void Remove(Tuple tuple){
-            List<string> actualView = this.GetView();
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
-
-            ITupleSpaceXL tupleSpace = null;
-            //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
-            {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
-
-            foreach (ITupleSpaceXL server in serversObj)
-            {
-                try
-                {
-                    RemoteAsyncSecondPhaseDelegate RemoteDel = new RemoteAsyncSecondPhaseDelegate(server.remove);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, null, null);
-                }
-                catch (Exception) { }
-            }
-            Console.WriteLine("** FRONTEND REMOVE: Just removed " + tuple);
-        }*/
-
+        
         //Selects a tuple do initiate the second phase of take
         private static Tuple TupleSelection(IEnumerable<Tuple> l)
         {
@@ -301,16 +259,7 @@ namespace DIDA_CLIENT
                     serversObj.Add(tupleSpace);
             }
 
-            /*foreach (ITupleSpaceXL server in serversObj)
-            {
-                try
-                {
-                    RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
-                }
-                catch (Exception) { Console.WriteLine("** FRONTEND WRITE: Could not call write on server"); }
-            }*/
-
+          
             Thread task0 = new Thread(() =>
             {
                 serversObj[0].write(_workerId, _requestId, tuple);
