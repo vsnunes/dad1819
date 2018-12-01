@@ -81,10 +81,16 @@ namespace DIDA_CLIENT
                     continue;
                 }
 
-                operation = input.Split(' ')[0];
+                try
+                {
+                    operation = input.Split(' ')[0];
 
-                ExecuteOperation(operation, input, parser, frontEnd, prompt);
-
+                    ExecuteOperation(operation, input, parser, frontEnd, prompt);
+                }
+                catch (NullReferenceException e)
+                {
+                    Console.WriteLine("### Syntax error");
+                }
             }
         }
 
@@ -151,12 +157,13 @@ namespace DIDA_CLIENT
                                 }
                                else
                                 {
-                                    innerOperation = innerInput.Split(' ')[0];
+                                    /*innerOperation = innerInput.Split(' ')[0];
                                     if (innerOperation == "begin-repeat")
                                     {
                                             ExecuteOperation(innerOperation, innerInput, parser, frontEnd, prompt + " begin-repeat " + times);
                                     }
-                                    else inputs.Add(innerInput);
+                                    else */
+                                    inputs.Add(innerInput);
                                 }
                                     
                                 

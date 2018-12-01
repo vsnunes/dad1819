@@ -108,18 +108,31 @@ namespace DIDA_CLIENT
                     if (tupleSpace != null)
                         serversObj.Add(tupleSpace);
                 }
-                
 
-                foreach (ITupleSpaceXL server in serversObj)
+
+            /*foreach (ITupleSpaceXL server in serversObj)
+            {
+                try
                 {
-                    try
-                    {
-                        RemoteAsyncReadDelegate RemoteDel = new RemoteAsyncReadDelegate(server.read);
-                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
-                        IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
-                    }
-                    catch (Exception) { Console.WriteLine("** FRONTEND READ: Cannot invoke read on server!"); }
+                    RemoteAsyncReadDelegate RemoteDel = new RemoteAsyncReadDelegate(server.read);
+                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
                 }
+                catch (Exception) { Console.WriteLine("** FRONTEND READ: Cannot invoke read on server!"); }
+            }*/
+
+            for (int i = 0; i < 3; i++)
+            {
+                new Thread(() =>
+                {
+                    lock(_responseRead)
+                    {
+                        if (_responseRead == null)
+                            _responseRead = serversObj[i].read(tuple);
+                    }
+                    
+                }).Start();
+            }
 
                 while (_responseRead == null)
                 {
@@ -288,7 +301,7 @@ namespace DIDA_CLIENT
                     serversObj.Add(tupleSpace);
             }
 
-            foreach (ITupleSpaceXL server in serversObj)
+            /*foreach (ITupleSpaceXL server in serversObj)
             {
                 try
                 {
@@ -296,7 +309,27 @@ namespace DIDA_CLIENT
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
                 }
                 catch (Exception) { Console.WriteLine("** FRONTEND WRITE: Could not call write on server"); }
-            }
+            }*/
+
+            Thread task0 = new Thread(() =>
+            {
+                serversObj[0].write(_workerId, _requestId, tuple);
+            });
+
+            Thread task1 = new Thread(() =>
+            {
+                serversObj[1].write(_workerId, _requestId, tuple);
+            });
+
+            Thread task2 = new Thread(() =>
+            {
+                serversObj[2].write(_workerId, _requestId, tuple);
+            });
+
+            task0.Start();
+            task1.Start();
+            task2.Start();
+
             _requestId++;
             Console.WriteLine("** FRONTEND WRITE: Just write " + tuple);
         }
