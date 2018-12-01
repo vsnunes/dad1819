@@ -25,23 +25,28 @@ namespace PUPPETMASTER
 
         public void Server(string server_id, string URL, int min_delay, int max_delay) {
             //Parse
-            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1];
-            Console.WriteLine(urlPcs);
+            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":/10000/pcs";
 
-           /*
             IPCS pcs = null;
             pcs = (IPCS)Activator.GetObject(typeof(IPCS), urlPcs);
-            string type = pcs.Server(min_delay, max_delay);
+            string type = pcs.Server(URL, min_delay, max_delay);
             if (type == "SMR")
                 processNames.Add(server_id, new Process(URL, Process.Type.SERVER_SMR));
             else if (type == "XL")
-                processNames.Add(server_id, new Process(URL, Process.Type.SERVER_XL));*/
+                processNames.Add(server_id, new Process(URL, Process.Type.SERVER_XL));
         }
 
         public void Client(string client_id, string URL, string script_file) {
+            //Parse
+            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":/10000/pcs";
+
             IPCS pcs = null;
-            pcs = (IPCS)Activator.GetObject(typeof(IPCS), URL);
-            pcs.Client(script_file);
+            pcs = (IPCS)Activator.GetObject(typeof(IPCS), urlPcs);
+            string type = pcs.Client(URL, script_file);
+            if (type == "SMR")
+                processNames.Add(client_id, new Process(URL, Process.Type.CLIENT_SMR));
+            else if (type == "XL")
+                processNames.Add(client_id, new Process(URL, Process.Type.CLIENT_XL));
         }
 
         public void Status() {

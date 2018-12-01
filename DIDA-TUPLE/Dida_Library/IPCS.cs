@@ -2,8 +2,8 @@
 {
     public interface IPCS
     {
-        string Server(int min_delay, int max_delay);
-        string Client(string script_file);
+        string Server(string url, int min_delay, int max_delay);
+        string Client(string url, string script_file);
         string Status();
         void Crash(string processName);
         void Freeze(string processName);

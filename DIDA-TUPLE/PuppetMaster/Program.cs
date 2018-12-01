@@ -20,16 +20,17 @@ namespace PUPPETMASTER
             if(args.Count() > 0)
             {
                 channel = new TcpChannel(Int32.Parse(args[0]));
+                ChannelServices.RegisterChannel(channel, false);
             }
             else
             {
                 channel = new TcpChannel(10001);
+                ChannelServices.RegisterChannel(channel, false);
             }
 
             PuppetMaster puppetMaster = new PuppetMaster();
-            ChannelServices.RegisterChannel(channel, false);
 
-           //RemotingServices.Marshal(puppetMaster, "PuppetMaster", typeof(PuppetMaster));
+            RemotingServices.Marshal(puppetMaster, "PuppetMaster", typeof(PuppetMaster));
 
             System.Console.WriteLine("PuppetMaster Service Started");
             System.Console.WriteLine("---------------");
