@@ -171,5 +171,140 @@ namespace DIDA_LIBRARY.Tests
             Assert.AreEqual(tuple1.GetNumberOfFields(), 3);
             Assert.AreEqual(tuple2.GetNumberOfFields(), 1);
         }
+
+        [TestMethod()]
+        public void WildCardsUsingObjects1Test()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("DADTest*");
+            _list.Add("cat");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add(new DADTestA(1,"ola"));
+            _list2.Add("cat");
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+        }
+
+        [TestMethod()]
+        public void WildCardsUsingObjects2Test()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("*TestA");
+            _list.Add("cat");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add(new DADTestA(1, "ola"));
+            _list2.Add("cat");
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+        }
+
+        [TestMethod()]
+        public void WildCardsUsingObjects3Test()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("DADTestA");
+            _list.Add("cat");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add(new DADTestA(1, "ola"));
+            _list2.Add("cat");
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+        }
+
+        [TestMethod()]
+        public void WildCardsUsingObjectsStressTest()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("DADTestA");
+            _list.Add("*Test*");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add(new DADTestA(1, "ola"));
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+            _list = new List<object>();
+            _list.Add("DAD*");
+            _list.Add("*Test*");
+            _list.Add("Sodade");
+            _tup = new Tuple(_list);
+
+            _list2 = new List<object>();
+            _list2.Add(new DADTestA(1, "ola"));
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            _list2.Add("Sodade");
+            _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+        }
+
+        [TestMethod()]
+        public void WildCardsUsingObjectsDiferentTest()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("*TestA");
+            _list.Add("*TestA");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add(new DADTestA(1, "ola"));
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreNotEqual(_tup, _tup2);
+            
+        }
+
+        [TestMethod()]
+        public void WildCardsAtDiferentPositionTest()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("c*");
+            _list.Add("*TestB");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add("cat");
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+            _list = new List<object>();
+            _list.Add("*og");
+            _list.Add("brown");
+            _list.Add("*gly");
+            _list.Add("*Test*");
+            _list.Add("*mar*");
+            _tup = new Tuple(_list);
+
+             _list2 = new List<object>();
+            _list2.Add("dog");
+            _list2.Add("brown");
+            _list2.Add("ugly");
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            _list2.Add("smart");
+            _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+
+        }
     }
 }

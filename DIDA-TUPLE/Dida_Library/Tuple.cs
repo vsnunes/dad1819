@@ -84,6 +84,12 @@ namespace DIDA_LIBRARY
             return s1.Equals(s2);
         }
 
+        private bool WildComparator(string s1, object s2)
+        {
+            string s2Name = s2.GetType().Name;
+            return WildComparator(s1, s2Name);
+        }
+
         public override bool Equals(object obj)
         {
             if (obj.GetType() == this.GetType())
@@ -98,9 +104,18 @@ namespace DIDA_LIBRARY
                     {
                         //When tuple fields are string instead of calling equals method call the wildcomparator
                         //to check for wildcards in strings
+
                         if (this.GetFieldByNumber(i).GetType() == typeof(string))
                         {
-                            if (WildComparator(this.GetFieldByNumber(i) as string, tuple.GetFieldByNumber(i) as string) == false)
+                            if (tuple.GetFieldByNumber(i) == null) return false;
+
+                            if (tuple.GetFieldByNumber(i).GetType() != typeof(string))
+                            {
+                                //Wildcard support of class name using objects
+                                if (WildComparator(this.GetFieldByNumber(i) as string, tuple.GetFieldByNumber(i)) == false)
+                                    return false;
+                            }
+                            else if (WildComparator(this.GetFieldByNumber(i) as string, tuple.GetFieldByNumber(i) as string) == false)
                                 return false;
                             
                         }
