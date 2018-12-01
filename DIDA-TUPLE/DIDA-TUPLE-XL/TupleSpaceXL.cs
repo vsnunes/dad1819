@@ -39,7 +39,7 @@ namespace DIDA_TUPLE_XL
 
             while (result == null)
             {
-                lock (this)
+                lock (_tupleSpace)
                 {
                     foreach (Tuple t in _tupleSpace)
                     {
@@ -50,7 +50,7 @@ namespace DIDA_TUPLE_XL
                         }
                     }
                     if (result == null) //stil has not find any match
-                        Monitor.Wait(this);
+                        Monitor.Wait(_tupleSpace);
                 }
             }
             Console.WriteLine("** XL READ: Just read " + result);
