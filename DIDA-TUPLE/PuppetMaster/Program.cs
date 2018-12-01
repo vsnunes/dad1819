@@ -18,7 +18,6 @@ namespace PUPPETMASTER
 
         static void Main(string[] args)
         {
-
             TcpChannel channel;
 
             if (args.Count() > 0)
