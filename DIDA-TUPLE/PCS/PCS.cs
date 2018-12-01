@@ -47,5 +47,14 @@ namespace PCS
 
         public void Unfreeze(string processName) { }
 
+        public string Server(string url, int min_delay, int max_delay)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Client(string url, string script_file)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

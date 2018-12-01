@@ -57,7 +57,17 @@ namespace DIDA_CLIENT
             switch (args[0])
             {
                 case "SMR": frontEnd = new FrontEndSMR(); break;
-                case "XL": frontEnd = new FrontEndXL(Int32.Parse(args[1])); break;
+                case "XL":
+                    Console.WriteLine("Just looking for available servers ...");
+                    frontEnd = new FrontEndXL(Int32.Parse(args[1])); break;
+            }
+
+            string scriptFile = "";
+
+            if (args.Length > 2)
+            {
+                scriptFile = args[2];
+                Console.WriteLine("You have loaded a script file: " + scriptFile);
             }
 
             string input = "";
@@ -67,36 +77,47 @@ namespace DIDA_CLIENT
 
             while (true)
             {
-                _counter = 0;
-                Console.Write(prompt + " insert script file > "); input = Console.ReadLine();
-                if (input == "exit")
+                
+                if (scriptFile != "")
                 {
-                    return;
+                    try
+                    {
+                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + scriptFile);
+                        lines = File.ReadAllLines(path);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
+                        break;
+                    }
+                    _counter = 0;
+                    while (_counter < lines.Count())
+                    {
+                        operation = lines[_counter].Split(' ')[0];
+                        ExecuteOperation(operation, lines[_counter], parser, frontEnd, prompt);
+                    }
                 }
-                else if (input == "help")
+                else
                 {
-                    Console.WriteLine("Available commands: ");
-                    Console.WriteLine("add <\"A\",\"B\",\"C\">");
-                    Console.WriteLine("read <\"A\",\"B\",\"C\">");
-                    Console.WriteLine("take <\"A\",\"B\",\"C\">");
-                    Console.WriteLine("exit");
-                    Console.WriteLine();
-                    continue;
-                }
-                try
-                {
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
-                    lines = File.ReadAllLines(path);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
-                    continue;
-                }
-                while (_counter < lines.Count())
-                {
-                    operation = lines[_counter].Split(' ')[0];
-                    ExecuteOperation(operation, lines[_counter], parser, frontEnd, prompt);
+                    
+                    Console.Write(prompt + " > "); input = Console.ReadLine();
+                    if (input == "exit")
+                    {
+                        return;
+                    }
+                    else if (input == "help")
+                    {
+                        Console.WriteLine("Available commands: ");
+                        Console.WriteLine("add <\"A\",\"B\",\"C\">");
+                        Console.WriteLine("read <\"A\",\"B\",\"C\">");
+                        Console.WriteLine("take <\"A\",\"B\",\"C\">");
+                        Console.WriteLine("exit");
+                        Console.WriteLine();
+                        continue;
+                    }
+
+                    operation = input.Split(' ')[0];
+                    ExecuteOperation(operation, input, parser, frontEnd, prompt);
                 }
             }
         }
