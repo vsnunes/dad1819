@@ -52,11 +52,7 @@ namespace DIDA_LIBRARY
 
             lock (_lockList[workerId])
             {
-                foreach (Tuple tuple in _lockList[workerId])
-                {
-                    Monitor.Exit(tuple);
-                }
-
+                
                 //Cleans the entire list
                 _lockList[workerId].Clear();
 

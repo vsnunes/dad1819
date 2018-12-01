@@ -449,5 +449,57 @@ namespace DIDA_TUPLE_XL.Tests
             Assert.AreEqual(_tuple2, takeResult[0]);*/
             Thread.Sleep(4000);
         }
+
+        [TestMethod(), Timeout(15000)]
+        public void ConcurrentAddTakeTest()
+        {
+            _fields.Add("1");
+            _fields2.Add("2");
+            _tuple1 = new Tuple(_fields);
+            _tuple2 = new Tuple(_fields2);
+
+            Assert.AreEqual(0, _tupleSpace.ItemCount());
+
+            Task t0 = new Task(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                Thread.Sleep(2000);
+                for (int i = 0; i < 100; i++)
+                {
+                    //add <"1">
+                    _tupleSpace.write(1, 1 + i, _tuple1);
+                    Console.WriteLine("1 -> Just write 1 " + i);
+                    //take <"2">
+                    _tupleSpace.take(1, 2 + i, _tuple2);
+                    Console.WriteLine("1 -> Just take 2 " + i);
+                }
+              
+                return; //just to ensure that we stop the thread
+            });
+
+            Task t1 = new Task(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                for (int i = 0; i < 100; i++)
+                {
+                    //add <"2">
+                    _tupleSpace.write(2, 1 + i, _tuple2);
+                    Console.WriteLine("2 -> Just write 2 " + i);
+                    //take <"1">
+                    _tupleSpace.take(2, 2 + i, _tuple1);
+                    Console.WriteLine("2 -> Just take 1 " + i);
+                }
+                return; //just to ensure that we stop the thread
+            });
+
+            t0.Start();
+            t1.Start();
+
+            t0.Wait();
+            t1.Wait();
+
+            Assert.AreEqual(0, _tupleSpace.ItemCount());
+
+        }
     }
 }

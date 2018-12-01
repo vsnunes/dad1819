@@ -29,6 +29,11 @@ namespace DIDA_TUPLE_XL
             _view = View.Instance;
             _tupleSpace = new List<Tuple>();
             _lockList = new LockList();
+
+            //vitor: Hardcoded worker configuration!
+            _lockList.AddWorker(1);
+            _lockList.AddWorker(2);
+            _lockList.AddWorker(3);
         }
 
         public Log Log { get => _log; set => _log = value; }
@@ -57,32 +62,16 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void remove(Tuple choice, List<Tuple> lockedTuples)
+        public void remove(int workerId, Tuple choice)
         {
-            Tuple match = null;
+            Console.WriteLine("** START TAKE PHASE2 OF: " + choice);
             lock (_tupleSpace)
             {
-                foreach (Tuple t in _tupleSpace)
-                {
-                    if (t.Equals(choice))
-                    {
-                        match = t;
-                        break; //just found what i want to remove
-                    }
-
-                }
-
-                if (match != null)
-                {
-                    lockedTuples.Remove(match);
-                    _tupleSpace.Remove(match);
-                    foreach (Tuple t in lockedTuples)
-                    {
-                        t.Locker = false;
-                    }
-                }
+                _lockList.ReleaseAllLocks(workerId);
+                _tupleSpace.Remove(choice);
             }
-            Console.WriteLine("** XL REMOVE: Just removed " + choice);
+
+            Console.WriteLine("** FINISHED TAKE PHASE2 OF: " + choice);
         }
 
         public int ItemCount()
@@ -97,64 +86,65 @@ namespace DIDA_TUPLE_XL
         /// <returns></returns>
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
-            List<Tuple> result = new List<Tuple>();
+            Console.WriteLine("** STARTING TAKE PHASE1 OF: " + tuple);
+            List<Tuple> matchingTuples;
 
-            
+            lock(this)
+            {
+                matchingTuples = match(workerId, tuple);
+                while (matchingTuples == null || matchingTuples.Count() == 0)
+                {
+                    matchingTuples = match(workerId, tuple);
+                    Monitor.Wait(this, new Random().Next(1, 10));
+                }
+                        
+            }
+                
+
+            Console.WriteLine("** FINISHED TAKE PHASE1 OF: " + tuple);
+            return matchingTuples;
+        }
+
+        public List<Tuple> match(int workerId, Tuple t)
+        {
+            List<Tuple> M = new List<Tuple>();
+
+            //vitor: nasty code ahead!
+
             lock (_tupleSpace)
             {
-
-                while (result.Count == 0)
+                foreach (Tuple tuple in _tupleSpace)
                 {
-                    for (int i = 0; i < _tupleSpace.Count(); i++)
+                    if (tuple.Equals(t))
                     {
-                        Tuple t = null;
-                        try
+                        if (_lockList.CheckTupleLock(tuple))
                         {
-                            t = _tupleSpace.ElementAt(i);
+                            _lockList.ReleaseAllLocks(workerId);
+                            return null; //failure
                         }
-                        catch (Exception e)
+                        else
                         {
-                            break;
+                            _lockList.AddElement(workerId, tuple);
+                            M.Add(tuple);
                         }
-                            lock (t)
-                            {
-                                if (t.Locker == false)
-                                {
-                                    t.Locker = true;
-                                    if (t.Equals(tuple))
-                                    {
-                                        result.Add(t);
-                                    }
-                                    else
-                                    {
-                                        t.Locker = false;
-                                    }
-                                }
-
-                            }
-                        
                     }
-
-
-                    if (result.Count == 0)
-                    {
-                        Monitor.Wait(_tupleSpace);
-                    }
-                    
                 }
             }
-            
-            return result;
+            return M;
         }
 
         public void write(int workerId, int requestId, Tuple tuple)
         {
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
-            lock (_tupleSpace)
+
+            lock (this)
             {
-                _tupleSpace.Add(tuple);
-                Monitor.PulseAll(_tupleSpace);
+                lock (_tupleSpace)
+                {
+                    _tupleSpace.Add(tuple);
+                }
+                Monitor.PulseAll(this);
             }
 
             Console.WriteLine("** XL WRITE: " + tuple);

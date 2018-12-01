@@ -14,42 +14,39 @@ namespace DIDA_CLIENT
     {
         private static Object ReadLock = new Object();
 
-
         private int _workerId;
         private int _requestId = 0;
         private static int number_servers;
-        private static AutoResetEvent[] readHandles;
 
+        List<ITupleSpaceXL> serversObj;
 
-
-        /// <summary>
-        /// Delegate for Reading Operations
-        /// </summary>
-        public delegate Tuple RemoteAsyncReadDelegate(Tuple t);
-
-        public delegate void RemoteAsyncSecondPhaseDelegate(Tuple t);
-
-        /// <summary>
-        /// Delegate for Writes that require workerId, requestId and a tuple.
-        /// </summary>
-        public delegate void RemoteAsyncWriteDelegate(int workerId,int requestId, Tuple t);
-
-        /// <summary>
-        /// Delegate for Takes that require workerId, requestId and a tuple.
-        /// Remeber: Take retrieves a list of potencial tuples to be removed
-        /// </summary>
+        List<string> actualView;
 
         public FrontEndXL(int workerId) {
             _workerId = workerId;
             
             number_servers = this.GetView().Count();
-
+            actualView = this.GetView();
+            getServersProxy();
         }
 
-        /// <summary>
-        /// First read response.
-        /// </summary>
-        private static List<List<Tuple>> _responseTake = null;
+        public void getServersProxy()
+        {
+            serversObj = new List<ITupleSpaceXL>();
+            ITupleSpaceXL tupleSpace = null;
+            //save remoting objects of all members of the view
+            foreach (string serverPath in actualView)
+            {
+                try
+                {
+                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                    tupleSpace.ItemCount(); //just to check availability of the server
+                }
+                catch (Exception) { }
+                if (tupleSpace != null)
+                    serversObj.Add(tupleSpace);
+            }
+        }
 
         public List<string> GetView()
         {
@@ -66,28 +63,11 @@ namespace DIDA_CLIENT
 
         public Tuple Read(Tuple tuple)
         {
+            AutoResetEvent[] readHandles;
             readHandles = new AutoResetEvent[1];
             readHandles[0] = new AutoResetEvent(false);
 
             Tuple _responseRead = null;
-
-            List<string> actualView = this.GetView();
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
-
-            ITupleSpaceXL tupleSpace = null;
-
-            //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
-            {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
 
             Thread task0 = new Thread(() =>
             {
@@ -160,65 +140,54 @@ namespace DIDA_CLIENT
 
         public Tuple Take(Tuple tuple)
         {
-            List<string> actualView = this.GetView();
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
-
-            AutoResetEvent[] handlers = new AutoResetEvent[number_servers];
-            Thread[] threadPool = new Thread[number_servers];
-
-            ITupleSpaceXL tupleSpace = null;
+            AutoResetEvent[] handlers = new AutoResetEvent[3];
+            Thread[] threadPool = new Thread[3];
 
             List<List<Tuple>> possibleTuples = new List<List<Tuple>>();
             List<Tuple>[] pt = new List<Tuple>[3];
             
-            for (int i = 0; i < number_servers; i++)
+            for (int i = 0; i < 3; i++)
             {
                 handlers[i] = new AutoResetEvent(false);
             }
 
-            foreach (string serverPath in actualView)
-            {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
+            
 
             Thread task0 = new Thread(() =>
             {
-                lock (possibleTuples)
-                {
+                
                     List<Tuple> l = serversObj[0].take(_workerId, _requestId, tuple);
                     pt[0] = l;
+                lock (possibleTuples)
+                {
                     possibleTuples.Add(l);
-                    handlers[0].Set();
                 }
+                    handlers[0].Set();
+                
             });
 
             Thread task1 = new Thread(() =>
             {
+                
+                 List<Tuple> l = serversObj[1].take(_workerId, _requestId, tuple);
+                 pt[1] = l;
                 lock (possibleTuples)
                 {
-                    List<Tuple> l = serversObj[1].take(_workerId, _requestId, tuple);
-                    pt[1] = l;
-                    possibleTuples.Add(l);
-                    handlers[1].Set();
+                   possibleTuples.Add(l);
                 }
+                handlers[1].Set();
+                
             });
 
             Thread task2 = new Thread(() =>
             {
-                lock (possibleTuples)
-                {
                     List<Tuple> l = serversObj[2].take(_workerId, _requestId, tuple);
                     pt[2] = l;
+                lock (possibleTuples)
+                {
                     possibleTuples.Add(l);
-                    handlers[2].Set();
                 }
+                handlers[2].Set();
             });
 
             task0.Start();
@@ -227,13 +196,36 @@ namespace DIDA_CLIENT
 
             WaitHandle.WaitAll(handlers);
 
+            handlers = new AutoResetEvent[3];
+            handlers[0] = new AutoResetEvent(false);
+            handlers[1] = new AutoResetEvent(false);
+            handlers[2] = new AutoResetEvent(false);
+
             Tuple choice = TupleSelection(Intersection(possibleTuples));
 
-            //Remove object from the server
-            for (int i = 0; i < 3; i++)
+           task0 = new Thread(() =>
             {
-                serversObj[i].remove(choice, pt[i]);
-            }
+                serversObj[0].remove(_workerId, choice);
+                handlers[0].Set();
+            });
+
+            task1 = new Thread(() =>
+            {
+                serversObj[1].remove(_workerId, choice);
+                handlers[1].Set();
+            });
+
+            task2 = new Thread(() =>
+            {
+                serversObj[2].remove(_workerId, choice);
+                handlers[2].Set();
+            });
+
+            task0.Start();
+            task1.Start();
+            task2.Start();
+
+            WaitHandle.WaitAll(handlers);
 
             return choice;
         }
@@ -265,42 +257,34 @@ namespace DIDA_CLIENT
 
         public void Write(Tuple tuple)
         {
-            List<string> actualView = this.GetView();
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+            AutoResetEvent[] handlers = new AutoResetEvent[3];
+            handlers[0] = new AutoResetEvent(false);
+            handlers[1] = new AutoResetEvent(false);
+            handlers[2] = new AutoResetEvent(false);
 
-            ITupleSpaceXL tupleSpace = null;
-            //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
-            {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (Exception) { tupleSpace = null; Console.WriteLine("** FRONTEND WRITE: Could not connected to server at " + serverPath);  }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
-
-          
             Thread task0 = new Thread(() =>
             {
                 serversObj[0].write(_workerId, _requestId, tuple);
+                handlers[0].Set();
             });
 
             Thread task1 = new Thread(() =>
             {
                 serversObj[1].write(_workerId, _requestId, tuple);
+                handlers[1].Set();
             });
 
             Thread task2 = new Thread(() =>
             {
                 serversObj[2].write(_workerId, _requestId, tuple);
+                handlers[2].Set();
             });
 
             task0.Start();
             task1.Start();
             task2.Start();
+
+            WaitHandle.WaitAll(handlers);
 
             _requestId++;
             Console.WriteLine("** FRONTEND WRITE: Just write " + tuple);
