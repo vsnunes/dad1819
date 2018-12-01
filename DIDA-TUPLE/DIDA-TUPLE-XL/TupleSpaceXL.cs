@@ -162,5 +162,19 @@ namespace DIDA_TUPLE_XL
             Console.WriteLine("** XL ROLLBACK: Rollback this workerId " + workerId);
         }
 
+        public void Freeze()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unfreeze()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Crash()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

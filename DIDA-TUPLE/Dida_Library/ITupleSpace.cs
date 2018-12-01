@@ -30,5 +30,11 @@
         /// </summary>
         /// <returns></returns>
         int ItemCount();
+
+        void Freeze();
+
+        void Unfreeze();
+
+        void Crash();
     }
 }

@@ -14,23 +14,22 @@ namespace PCS
         static void Main(string[] args)
         {
             TcpChannel channel;
+            PCS pcs;
 
             if (args.Count() > 0)
             {
                 channel = new TcpChannel(Int32.Parse(args[0]));
+                pcs = new PCS(args[1]);
             }
             else
             {
-                channel = new TcpChannel(10000);
-
-                ChannelServices.RegisterChannel(channel, false);
+                channel = new TcpChannel(10001);
+                pcs = new PCS("XL");
 
             }
-            RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(PCS),
-                "ProcessCreationService",
-                WellKnownObjectMode.Singleton);
+            ChannelServices.RegisterChannel(channel, false);
 
+            RemotingServices.Marshal(pcs, "pcs", typeof(PCS));
 
             System.Console.WriteLine("Process Creation Service Started!");
             System.Console.WriteLine("---------------");

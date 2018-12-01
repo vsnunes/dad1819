@@ -30,5 +30,11 @@ namespace DIDA_LIBRARY
         /// </summary>
         /// <param name="tuple">The tuple to be written.</param>
         void Write(Tuple tuple);
+
+        void Freeze();
+
+        void Unfreeze();
+
+        void Crash();
     }
 }
