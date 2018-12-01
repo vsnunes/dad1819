@@ -7,12 +7,14 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
+using System.IO;
 
 namespace PUPPETMASTER
 {
     class Program
     {
         private static PuppetMaster puppetMaster = new PuppetMaster();
+
 
         static void Main(string[] args)
         {
@@ -104,6 +106,13 @@ namespace PUPPETMASTER
                             System.Console.WriteLine("wait time cannot be null");
                             break;
                         }
+                    case "Load":
+                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input.Split(' ')[1] + ".txt");
+                        string[] lines = File.ReadAllLines(path);
+                        foreach(string line in lines){
+                            ExecuteOperation(line.Split(' ')[0], line);
+                        }
+                        break;
                     case "Exit":
                         System.Environment.Exit(1);
                         break;

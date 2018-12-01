@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PUPPETMASTER
 {
     public class PuppetMaster : MarshalByRefObject
     {
         public string MyPath = null;
-      //  public List<string> serverList = new List<string>();
+        public List<string> serverList = new List<string>();
 
         public PuppetMaster()
         {
