@@ -60,7 +60,7 @@ namespace DIDA_CLIENT
 
         public List<string> GetView()
         {
-            string[] file = File.ReadAllLines("../../serverListXL.txt");
+            string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-CLIENT/serverListXL.txt"));
             List<string> servers = new List<string>();
 
             foreach (string i in file)

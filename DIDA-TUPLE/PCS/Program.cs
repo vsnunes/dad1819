@@ -23,7 +23,7 @@ namespace PCS
             }
             else
             {
-                channel = new TcpChannel(10001);
+                channel = new TcpChannel(10000);
                 pcs = new PCS("XL");
 
             }

@@ -12,7 +12,9 @@ namespace PUPPETMASTER
         string[] file = File.ReadAllLines("../../pcsList.txt");
         List<IPCS> ipcs = new List<IPCS>();
 
-        Dictionary<String, Process> processNames = new Dictionary<string, Process>();
+        private static int XLFEcounter = 0;
+
+        Dictionary<string, Process> processNames = new Dictionary<string, Process>();
 
         public PuppetMaster()
         {
@@ -25,7 +27,12 @@ namespace PUPPETMASTER
 
         public void Server(string server_id, string URL, int min_delay, int max_delay) {
             //Parse
-            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":/10000/pcs";
+            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":10000/pcs";
+            if(processNames.ContainsKey(server_id))
+            {
+                Console.WriteLine("Server ID already exists");
+                return;
+            }
 
             IPCS pcs = null;
             pcs = (IPCS)Activator.GetObject(typeof(IPCS), urlPcs);
@@ -36,17 +43,26 @@ namespace PUPPETMASTER
                 processNames.Add(server_id, new Process(URL, Process.Type.SERVER_XL));
         }
 
-        public void Client(string client_id, string URL, string script_file) {
+        public void Client(string client_id, string URL, string script_file)
+        {
+            if (processNames.ContainsKey(client_id))
+            {
+                Console.WriteLine("Client ID already exists");
+                return;
+            }
             //Parse
-            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":/10000/pcs";
+            string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":10000/pcs";
 
             IPCS pcs = null;
             pcs = (IPCS)Activator.GetObject(typeof(IPCS), urlPcs);
-            string type = pcs.Client(URL, script_file);
+            string type = pcs.Client(URL, script_file, XLFEcounter);
             if (type == "SMR")
                 processNames.Add(client_id, new Process(URL, Process.Type.CLIENT_SMR));
             else if (type == "XL")
+            {
                 processNames.Add(client_id, new Process(URL, Process.Type.CLIENT_XL));
+                XLFEcounter++;
+            }
         }
 
         public void Status() {
