@@ -44,18 +44,11 @@ namespace DIDA_CLIENT
             
             number_servers = this.GetView().Count();
 
-            readHandles = new AutoResetEvent[1];
-
-            readHandles[0] = new AutoResetEvent(false);
-
         }
 
         /// <summary>
         /// First read response.
-        /// It will be update on callback function
         /// </summary>
-        private static Tuple _responseRead = null;
-
         private static List<List<Tuple>> _responseTake = null;
 
         public List<string> GetView()
@@ -70,65 +63,95 @@ namespace DIDA_CLIENT
             return servers;
         }
 
-        /// <summary>
-        /// Callback function to process read's server' replies
-        /// <param name="IAsyncResult"A AsyncResult Delgate Object.</param>
-        /// </summary>
-        public static void CallbackRead(IAsyncResult ar)
-        {
-            RemoteAsyncReadDelegate del = (RemoteAsyncReadDelegate)((AsyncResult)ar).AsyncDelegate;
-            lock (ReadLock)
-            {
-                //Only care about one reply, ignore others
-                if (_responseRead == null)
-                {
-                    _responseRead = del.EndInvoke(ar);
-                    readHandles[0].Set();
-                }
-            }
-        }
 
         public Tuple Read(Tuple tuple)
         {
+            readHandles = new AutoResetEvent[1];
+            readHandles[0] = new AutoResetEvent(false);
+
+            Tuple _responseRead = null;
 
             List<string> actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
 
-                //save remoting objects of all members of the view
-                foreach (string serverPath in actualView)
-                {
-                    try
-                    {
-                        tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                        tupleSpace.ItemCount(); //just to check availability of the server
-                    }
-                    catch (Exception) { tupleSpace = null; }
-                    if (tupleSpace != null)
-                        serversObj.Add(tupleSpace);
-                }
-
-            for (int i = 0; i < 3; i++)
+            //save remoting objects of all members of the view
+            foreach (string serverPath in actualView)
             {
-                new Thread(() =>
+                try
                 {
-                    lock(_responseRead)
-                    {
-                        if (_responseRead == null)
-                            _responseRead = serversObj[i].read(tuple);
-                    }
-                    
-                }).Start();
+                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                    tupleSpace.ItemCount(); //just to check availability of the server
+                }
+                catch (Exception) { tupleSpace = null; }
+                if (tupleSpace != null)
+                    serversObj.Add(tupleSpace);
             }
+
+            Thread task0 = new Thread(() =>
+            {
 
                 while (_responseRead == null)
                 {
-                    Console.WriteLine("** FRONTEND READ: Not yet receive any reply let me wait...");
-
-                    WaitHandle.WaitAny(readHandles);
-                   
+                    Tuple possible = serversObj[0].read(tuple);
+                    if (possible != null)
+                    {
+                        lock (ReadLock)
+                        {
+                            _responseRead = possible;
+                            readHandles[0].Set();
+                        }
+                    }
                 }
+            });
+
+
+            Thread task1 = new Thread(() =>
+            {
+                
+                while (_responseRead == null)
+                {
+                    Tuple possible = serversObj[1].read(tuple);
+                    if(possible != null)
+                    {
+                        lock (ReadLock)
+                        {
+                            _responseRead = possible;
+                            readHandles[0].Set();
+                        }
+                    }
+                }
+            });
+
+            Thread task2 = new Thread(() =>
+            {
+
+                while (_responseRead == null)
+                {
+                    Tuple possible = serversObj[2].read(tuple);
+                    if (possible != null)
+                    {
+                        lock (ReadLock)
+                        {
+                            _responseRead = possible;
+                            readHandles[0].Set();
+                        }
+                    }
+                }
+            });
+
+            task0.Start();
+            task1.Start();
+            task2.Start();
+
+            while (_responseRead == null)
+            {
+                Console.WriteLine("** FRONTEND READ: Not yet receive any reply let me wait...");
+
+                WaitHandle.WaitAny(readHandles);
+                   
+            }
             
             _requestId++;
             Console.WriteLine("** FRONTEND READ: Here is a response: " + _responseRead);
