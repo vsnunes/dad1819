@@ -1,0 +1,6 @@
+Status
+Client ola ola ola
+Server ola ola 2 1
+Wait 1000
+Client ola addeus
+Load script

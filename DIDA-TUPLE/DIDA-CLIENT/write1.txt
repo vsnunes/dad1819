@@ -1,2 +1,5 @@
-add <"2">
+wait 5
+begin-repeat 100
+add <"1">
 read <"2">
+end-repeat
