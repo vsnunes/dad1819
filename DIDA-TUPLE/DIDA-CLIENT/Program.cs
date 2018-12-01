@@ -82,7 +82,7 @@ namespace DIDA_CLIENT
                 {
                     try
                     {
-                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + scriptFile);
+                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-CLIENT/" + scriptFile);
                         lines = File.ReadAllLines(path);
                     }
                     catch (Exception e)

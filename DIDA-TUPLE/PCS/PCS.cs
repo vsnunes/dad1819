@@ -64,7 +64,7 @@ namespace PCS
 
                 if (_type == ServerType.SMR)
                 {
-                    string args = " SMR " + " 0 ";
+                    string args = " SMR " + " 0 " + script_file;
                     ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-CLIENT/bin/Debug/DIDA-CLIENT.exe"), args);
                     info.CreateNoWindow = false;
                     info.UseShellExecute = true;
@@ -74,7 +74,8 @@ namespace PCS
                 }
                 else if (_type == ServerType.XL)
                 {
-                    string args = " XL " + counter;
+                    string args = " XL " + counter + " " + script_file;
+                    Console.WriteLine(args);
                     ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-CLIENT/bin/Debug/DIDA-CLIENT.exe"), args);
                     info.CreateNoWindow = false;
                     info.UseShellExecute = true;
@@ -101,15 +102,5 @@ namespace PCS
         public void Freeze(string processName) { }
 
         public void Unfreeze(string processName) { }
-
-        public string Server(string url, int min_delay, int max_delay)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string Client(string url, string script_file)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
