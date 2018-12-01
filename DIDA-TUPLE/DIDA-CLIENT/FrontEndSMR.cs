@@ -20,9 +20,17 @@ namespace DIDA_CLIENT
             }
         }
 
+        public void Crash()
+        {
+            throw new NotImplementedException();
+        }
 
+        public void Freeze()
+        {
+            throw new NotImplementedException();
+        }
 
-    public List<string> GetView()
+        public List<string> GetView()
         {
             List<string> view = new List<string>();
             ITupleSpace tupleSpace = null;
@@ -78,6 +86,11 @@ namespace DIDA_CLIENT
                 }catch(Exception){ Console.WriteLine("Server with address: " + i + "has crashed"); }
             }
             return null; 
+        }
+
+        public void Unfreeze()
+        {
+            throw new NotImplementedException();
         }
 
         public void Write(Tuple tuple)

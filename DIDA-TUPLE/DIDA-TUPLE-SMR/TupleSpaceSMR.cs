@@ -370,5 +370,19 @@ namespace DIDA_TUPLE_SMR
         //Ping        
         public void imAlive() { }
 
+        public void Freeze()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unfreeze()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Crash()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

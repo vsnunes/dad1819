@@ -13,14 +13,11 @@ namespace PUPPETMASTER
 {
     class Program
     {
-        private static PuppetMaster puppetMaster = new PuppetMaster();
-
-
         static void Main(string[] args)
         {
             TcpChannel channel;
 
-            if (args.Count() > 0)
+            if(args.Count() > 0)
             {
                 channel = new TcpChannel(Int32.Parse(args[0]));
             }
@@ -29,12 +26,10 @@ namespace PUPPETMASTER
                 channel = new TcpChannel(10001);
             }
 
+            PuppetMaster puppetMaster = new PuppetMaster();
             ChannelServices.RegisterChannel(channel, false);
 
-            //puppetMaster.MyPath = "tcp://localhost:" + args[0] + "/PuppetMaster";
-
-            RemotingServices.Marshal(puppetMaster, "PuppetMaster", typeof(PuppetMaster));
-
+           //RemotingServices.Marshal(puppetMaster, "PuppetMaster", typeof(PuppetMaster));
 
             System.Console.WriteLine("PuppetMaster Service Started");
             System.Console.WriteLine("---------------");
@@ -46,12 +41,12 @@ namespace PUPPETMASTER
             while (true){
                 Console.Write("Insert your command > "); input = Console.ReadLine();
                 operation = input.Split(' ')[0];
-                ExecuteOperation(operation, input);
+                ExecuteOperation(puppetMaster, operation, input);
 
             }
         }
 
-        private static void ExecuteOperation(string operation, string input)
+        private static void ExecuteOperation(PuppetMaster puppetMaster, string operation, string input)
         {
             try
             {
@@ -109,7 +104,7 @@ namespace PUPPETMASTER
                         var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input.Split(' ')[1] + ".txt");
                         string[] lines = File.ReadAllLines(path);
                         foreach(string line in lines){
-                            ExecuteOperation(line.Split(' ')[0], line);
+                            ExecuteOperation(puppetMaster, line.Split(' ')[0], line);
                         }
                         break;
                     case "Exit":
@@ -123,7 +118,8 @@ namespace PUPPETMASTER
             }
             catch (OverflowException e)
             {
-                System.Console.WriteLine("Number too big");            }
+                System.Console.WriteLine("Number too big");
+            }
         }
     }
 }
