@@ -292,8 +292,9 @@ namespace DIDA_CLIENT
             {
                 try
                 {
-                    RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
+                    server.write(_workerId, _requestId, tuple);
+                    //RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
+                    //IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
                 }
                 catch (Exception) { Console.WriteLine("** FRONTEND WRITE: Could not call write on server"); }
             }
