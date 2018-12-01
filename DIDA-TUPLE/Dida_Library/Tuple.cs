@@ -104,8 +104,11 @@ namespace DIDA_LIBRARY
                     {
                         //When tuple fields are string instead of calling equals method call the wildcomparator
                         //to check for wildcards in strings
+
                         if (this.GetFieldByNumber(i).GetType() == typeof(string))
                         {
+                            if (tuple.GetFieldByNumber(i) == null) return false;
+
                             if (tuple.GetFieldByNumber(i).GetType() != typeof(string))
                             {
                                 //Wildcard support of class name using objects

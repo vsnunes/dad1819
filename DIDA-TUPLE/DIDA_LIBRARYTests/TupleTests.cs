@@ -270,5 +270,41 @@ namespace DIDA_LIBRARY.Tests
             Assert.AreNotEqual(_tup, _tup2);
             
         }
+
+        [TestMethod()]
+        public void WildCardsAtDiferentPositionTest()
+        {
+            List<object> _list = new List<object>();
+            _list.Add("c*");
+            _list.Add("*TestB");
+            Tuple _tup = new Tuple(_list);
+
+            List<object> _list2 = new List<object>();
+            _list2.Add("cat");
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            Tuple _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+            _list = new List<object>();
+            _list.Add("*og");
+            _list.Add("brown");
+            _list.Add("*gly");
+            _list.Add("*Test*");
+            _list.Add("*mar*");
+            _tup = new Tuple(_list);
+
+             _list2 = new List<object>();
+            _list2.Add("dog");
+            _list2.Add("brown");
+            _list2.Add("ugly");
+            _list2.Add(new DADTestB(2, "Sodade", 4));
+            _list2.Add("smart");
+            _tup2 = new Tuple(_list2);
+
+            Assert.AreEqual(_tup, _tup2);
+
+
+        }
     }
 }
