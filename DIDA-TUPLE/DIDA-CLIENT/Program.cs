@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using DIDA_LIBRARY;
@@ -9,6 +10,8 @@ namespace DIDA_CLIENT
 {
     public class Program
     {
+        private static int _counter = 0;
+        private static string[] lines;
         private static List<string> servers = new List<string>();
 
         private static List<Tuple> responses = new List<Tuple>();
@@ -60,12 +63,12 @@ namespace DIDA_CLIENT
             string input = "";
             string operation;
 
-            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]";
+            string prompt = "[CLIENT " + args[0] + " " + args[1] + "]"; 
 
             while (true)
             {
-                Console.Write(prompt + " > ");  input = Console.ReadLine();
-
+                _counter = 0;
+                Console.Write(prompt + " insert script file > "); input = Console.ReadLine();
                 if (input == "exit")
                 {
                     return;
@@ -80,16 +83,20 @@ namespace DIDA_CLIENT
                     Console.WriteLine();
                     continue;
                 }
-
                 try
                 {
-                    operation = input.Split(' ')[0];
-
-                    ExecuteOperation(operation, input, parser, frontEnd, prompt);
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
+                    lines = File.ReadAllLines(path);
                 }
-                catch (NullReferenceException e)
+                catch (Exception e)
                 {
-                    Console.WriteLine("### Syntax error");
+                    Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
+                    continue;
+                }
+                while (_counter < lines.Count())
+                {
+                    operation = lines[_counter].Split(' ')[0];
+                    ExecuteOperation(operation, lines[_counter], parser, frontEnd, prompt);
                 }
             }
         }
@@ -111,16 +118,19 @@ namespace DIDA_CLIENT
                     tuple = checkTupleSyntax(parser, input);
 
                     Console.WriteLine("Tuple received: " + frontEnd.Read(tuple));
+                    _counter++;
                     break;
                 case "add":
                     tuple = checkTupleSyntax(parser, input);
 
                     frontEnd.Write(tuple);
+                    _counter++;
                     break;
                 case "take":
                     tuple = checkTupleSyntax(parser, input);
 
                     Console.WriteLine("Tuple received: " + frontEnd.Take(tuple));
+                    _counter++;
                     break;
 
                 case "begin-repeat":
@@ -133,16 +143,15 @@ namespace DIDA_CLIENT
                         }
                         else
                         {
+                            _counter++;
                             List<string> inputs = new List<string>();
                             while (true)
                             {
-                                string innerInput;
+                                string innerInput = lines[_counter];
                                 string innerOperation;
-
-                                Console.Write(prompt + " begin-repeat " + times + " > "); innerInput = Console.ReadLine();
                                 
                                 //Only when end is provided we execute the all body of begin-repeat
-                                if (innerInput == "end")
+                                if (innerInput == "end-repeat")
                                 {
                                     for (int i = 0; i < times; i++)
                                     {
@@ -155,15 +164,10 @@ namespace DIDA_CLIENT
                                     }
                                     break;
                                 }
-                               else
-                                {
-                                    /*innerOperation = innerInput.Split(' ')[0];
-                                    if (innerOperation == "begin-repeat")
-                                    {
-                                            ExecuteOperation(innerOperation, innerInput, parser, frontEnd, prompt + " begin-repeat " + times);
-                                    }
-                                    else */
+                                else
+                                {                                   
                                     inputs.Add(innerInput);
+                                    _counter++;
                                 }
                                     
                                 
@@ -196,6 +200,7 @@ namespace DIDA_CLIENT
                                 Console.WriteLine("I'm waiting ...");
                                 Thread.Sleep(seconds * 1000);
                                 Console.WriteLine("Finished waiting!");
+                                _counter++;
                             }
                     }
                         catch (Exception e)
