@@ -13,6 +13,8 @@ namespace DIDA_TUPLE_XL
 {
     public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL
     {
+        private int _minDelay;
+        private int _maxDelay;
         private List<Tuple> _tupleSpace;
         private Log _log;
 
@@ -26,12 +28,25 @@ namespace DIDA_TUPLE_XL
             _view = View.Instance;
             _tupleSpace = new List<Tuple>();
             _lockList = new LockList();
+            MinDelay = 0;
+            MaxDelay = 0;
+        }
+
+
+        private int generateRandomDelay() {
+            if (MinDelay == 0 && MaxDelay == 0)
+                return 0;
+            return new Random().Next(MinDelay, MaxDelay);
         }
 
         public Log Log { get => _log; set => _log = value; }
 
+        public int MinDelay { get => _minDelay; set => _minDelay = value; }
+        public int MaxDelay { get => _maxDelay; set => _maxDelay = value; }
+
         public Tuple read(Tuple tuple)
         {
+            Thread.Sleep(generateRandomDelay());
             Tuple result = null;
 
             while (result == null)
@@ -89,6 +104,7 @@ namespace DIDA_TUPLE_XL
         /// <returns></returns>
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
+            Thread.Sleep(generateRandomDelay());
             List<Tuple> result = new List<Tuple>();
             int timeout = 1000;
 
@@ -129,6 +145,7 @@ namespace DIDA_TUPLE_XL
 
         public void write(int workerId, int requestId, Tuple tuple)
         {
+            Thread.Sleep(generateRandomDelay());
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
             lock (_tupleSpace)
@@ -163,7 +180,7 @@ namespace DIDA_TUPLE_XL
 
         public void Crash()
         {
-           System.Environment.Exit(0);
+            System.Environment.Exit(0);
         }
 
         public void Status()

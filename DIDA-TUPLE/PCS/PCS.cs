@@ -27,7 +27,7 @@ namespace PCS
         {
             try
             {
-                string args = url.Split(':')[2].Split('/')[0] + " " + nameService;
+                string args = url.Split(':')[2].Split('/')[0] + " " + nameService + " " + min_delay + " " + max_delay;
 
                 if (_type == ServerType.SMR)
                 {

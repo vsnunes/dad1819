@@ -38,9 +38,19 @@ namespace DIDA_TUPLE_XL
                      args[1],
                      WellKnownObjectMode.Singleton);
 
+            ChannelServices.RegisterChannel(channel, false);
 
+            TupleSpaceXL server = new TupleSpaceXL();
 
-                System.Console.WriteLine(args[1] + ": DIDA-TUPLE-XL Server Started!");
+            //Set min delay and max delay
+            if (args.Length == 4) {
+                server.MinDelay = Int32.Parse(args[2]);
+                server.MaxDelay = Int32.Parse(args[3]);
+            }
+
+            RemotingServices.Marshal(server, args[1], typeof(TupleSpaceXL));
+
+            System.Console.WriteLine(args[1] + ": DIDA-TUPLE-XL Server Started!");
                 System.Console.WriteLine("---------------");
                 System.Console.WriteLine("<Enter> to exit...");
                 System.Console.ReadLine();

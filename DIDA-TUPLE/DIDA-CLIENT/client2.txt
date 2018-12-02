@@ -1,5 +1,5 @@
 wait 5
-begin-repeat 100000
-take <"2">
+begin-repeat 100
 add <"1">
+take <"2">
 end-repeat
