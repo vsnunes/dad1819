@@ -100,6 +100,7 @@ namespace DIDA_CLIENT
                     operation = lines[_counter].Split(' ')[0];
                     ExecuteOperation(operation, lines[_counter], parser, frontEnd, prompt);
                 }
+                break;
             }
         }
 
