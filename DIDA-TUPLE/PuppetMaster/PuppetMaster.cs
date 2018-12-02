@@ -66,8 +66,22 @@ namespace PUPPETMASTER
         }
 
         public void Status() {
-            foreach (IPCS pcs in ipcs)
-                Console.WriteLine(pcs.Status());
+            foreach (KeyValuePair<string, Process> KVP in processNames)
+            {
+                if (KVP.Value.Type1 == Process.Type.SERVER_SMR)
+                {
+                    ITupleSpace smrServer = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), KVP.Value.Url);
+                    smrServer.Status();
+                }
+                if (KVP.Value.Type1 == Process.Type.SERVER_XL)
+                {
+                    ITupleSpaceXL XLServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), KVP.Value.Url);
+                    XLServer.Status();
+                }
+
+
+            }     
+                   
         }
 
         public void Crash(string processName) {

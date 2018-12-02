@@ -176,5 +176,11 @@ namespace DIDA_TUPLE_XL
         {
            System.Environment.Exit(0);
         }
+
+        public void Status()
+        {
+            Console.WriteLine("My actual view:");
+            Console.WriteLine(_view);
+        }
     }
 }

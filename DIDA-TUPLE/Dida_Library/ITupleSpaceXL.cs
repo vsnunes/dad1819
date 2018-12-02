@@ -43,6 +43,8 @@ namespace DIDA_LIBRARY
         /// <param name="tuple"></param>
         void remove(int workerId, Tuple choice);
 
+        void Status();
+        
         void Freeze();
 
         void Unfreeze();
