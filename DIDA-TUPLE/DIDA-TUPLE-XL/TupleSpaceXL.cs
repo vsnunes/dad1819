@@ -15,6 +15,7 @@ namespace DIDA_TUPLE_XL
     {
         private int _minDelay;
         private int _maxDelay;
+        private static bool freeze = false;
         private List<Tuple> _tupleSpace;
         private Log _log;
 
@@ -46,6 +47,12 @@ namespace DIDA_TUPLE_XL
 
         public Tuple read(Tuple tuple)
         {
+            //Checks if the server is freezed
+            lock(this) {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             Thread.Sleep(generateRandomDelay());
             Tuple result = null;
 
@@ -105,6 +112,13 @@ namespace DIDA_TUPLE_XL
         /// <returns></returns>
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             Thread.Sleep(generateRandomDelay());
             List<Tuple> result = new List<Tuple>();
             int timeout = new Random().Next(100, 500);
@@ -147,6 +161,13 @@ namespace DIDA_TUPLE_XL
 
         public void write(int workerId, int requestId, Tuple tuple)
         {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             Thread.Sleep(generateRandomDelay());
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
@@ -163,12 +184,18 @@ namespace DIDA_TUPLE_XL
 
         public void Freeze()
         {
-            throw new NotImplementedException();
+            lock (this)
+            {
+                freeze = true;
+            }
         }
 
         public void Unfreeze()
         {
-            throw new NotImplementedException();
+            lock(this) {
+                freeze = false;
+                Monitor.PulseAll(this);
+            }
         }
 
         public void Crash()
