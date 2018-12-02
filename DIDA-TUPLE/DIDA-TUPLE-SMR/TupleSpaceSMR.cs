@@ -388,7 +388,10 @@ namespace DIDA_TUPLE_SMR
         public void Status()
         {
             Console.WriteLine("My actual view:");
-            Console.WriteLine(_view);
+            foreach (string i in _servers)
+            {
+                Console.WriteLine(i);
+            }
         }
     }
 }
