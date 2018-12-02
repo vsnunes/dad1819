@@ -49,5 +49,15 @@ namespace DIDA_LIBRARY
             Servers.Remove(str);
         }
 
+        public override string ToString()
+        {
+            string tostring = "";
+            foreach (string i in _servers)
+            {
+                tostring += i + "\n";
+            }
+            return tostring;
+        }
+
     }
 }

@@ -382,7 +382,13 @@ namespace DIDA_TUPLE_SMR
 
         public void Crash()
         {
-            throw new NotImplementedException();
+            System.Environment.Exit(0);
+        }
+
+        public void Status()
+        {
+            Console.WriteLine("My actual view:");
+            Console.WriteLine(_view);
         }
     }
 }

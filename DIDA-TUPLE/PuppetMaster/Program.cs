@@ -59,12 +59,12 @@ namespace PUPPETMASTER
                             puppetMaster.Server(input.Split(' ')[1], input.Split(' ')[2], Int32.Parse(input.Split(' ')[3]), Int32.Parse(input.Split(' ')[4]));
                             break;
                         }
-                        catch (FormatException e)
+                        catch (FormatException)
                         {
                             System.Console.WriteLine("Max_delay and Min_delay need to be integers");
                             break;
                         }
-                        catch (ArgumentNullException e)
+                        catch (ArgumentNullException)
                         {
                             System.Console.WriteLine("Max_delay and Min_delay cannot be null");
                             break;
@@ -91,12 +91,12 @@ namespace PUPPETMASTER
                             Thread.Sleep(Int32.Parse(input.Split(' ')[1]));
                             break;
                         }
-                        catch (FormatException e)
+                        catch (FormatException)
                         {
                             System.Console.WriteLine("Wait argument must be an integer");
                             break;
                         }
-                        catch (ArgumentNullException e)
+                        catch (ArgumentNullException)
                         {
                             System.Console.WriteLine("wait time cannot be null");
                             break;
@@ -117,7 +117,7 @@ namespace PUPPETMASTER
             {
                 Console.WriteLine("Missing Arguments");
             }
-            catch (OverflowException e)
+            catch (OverflowException)
             {
                 System.Console.WriteLine("Number too big");
             }

@@ -31,6 +31,8 @@
         /// <returns></returns>
         int ItemCount();
 
+        void Status();
+
         void Freeze();
 
         void Unfreeze();

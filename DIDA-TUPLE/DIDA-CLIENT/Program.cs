@@ -68,7 +68,7 @@ namespace DIDA_CLIENT
             while (true)
             {
                 _counter = 0;
-                Console.Write(prompt + " insert script file > "); input = Console.ReadLine();
+                Console.WriteLine(prompt); input = args[2];
                 if (input == "exit")
                 {
                     return;
@@ -86,12 +86,14 @@ namespace DIDA_CLIENT
                 try
                 {
                     var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
+                    Console.WriteLine(path);
                     lines = File.ReadAllLines(path);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
-                    continue;
+                    Console.ReadLine();
+                    break;
                 }
                 while (_counter < lines.Count())
                 {
@@ -180,7 +182,7 @@ namespace DIDA_CLIENT
 
 
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Console.WriteLine("### ERROR: Invalid begin-repeat arg");
                     }
@@ -203,7 +205,7 @@ namespace DIDA_CLIENT
                             _counter++;
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Console.WriteLine("### ERROR: Invalid wait arg");
                     }

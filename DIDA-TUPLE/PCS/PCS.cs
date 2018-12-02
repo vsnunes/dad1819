@@ -48,7 +48,7 @@ namespace PCS
                 }
                 return null;
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 Console.WriteLine("Erro a criar Servidor");
                 return null;
@@ -84,7 +84,7 @@ namespace PCS
                 }
                 return null;
             }
-            catch(Exception e)
+            catch(Exception)
             {
                 Console.WriteLine("Erro a criar cliente");
                 return null;
@@ -97,10 +97,5 @@ namespace PCS
             return "STAAAAAAAAAAAAAAAAAAAAAAAAAAAATUS";
         }
 
-        public void Crash(string processName) { }
-
-        public void Freeze(string processName) { }
-
-        public void Unfreeze(string processName) { }
     }
 }

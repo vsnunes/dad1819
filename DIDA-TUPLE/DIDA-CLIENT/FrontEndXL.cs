@@ -275,21 +275,6 @@ namespace DIDA_CLIENT
             _requestId++;
             Console.WriteLine("** FRONTEND WRITE: Just write " + tuple);
         }
-
-        public void Freeze()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Unfreeze()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Crash()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     /// <summary>
