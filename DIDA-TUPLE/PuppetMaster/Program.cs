@@ -13,20 +13,15 @@ namespace PUPPETMASTER
 {
     class Program
     {
+        private static int _counter = 0;
         static void Main(string[] args)
         {
             TcpChannel channel;
 
-            if(args.Count() > 0)
-            {
-                channel = new TcpChannel(Int32.Parse(args[0]));
-                ChannelServices.RegisterChannel(channel, false);
-            }
-            else
-            {
-                channel = new TcpChannel(10001);
-                ChannelServices.RegisterChannel(channel, false);
-            }
+            
+            channel = new TcpChannel(10001);
+            ChannelServices.RegisterChannel(channel, false);
+
 
             PuppetMaster puppetMaster = new PuppetMaster();
 
@@ -39,11 +34,49 @@ namespace PUPPETMASTER
             //-----------------------------------
             string input = "";
             string operation = "";
-            while (true){
-                Console.Write("Insert your command > "); input = Console.ReadLine();
-                operation = input.Split(' ')[0];
-                ExecuteOperation(puppetMaster, operation, input);
+            string[] lines;
 
+            if (args.Count() > 0)
+            {
+                while (true)
+                {
+                    _counter = 0;
+                    input = args[0];
+                    
+
+                    try
+                    {
+                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
+                        
+                        lines = File.ReadAllLines(path);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
+                        Console.ReadLine();
+                        break;
+                    }
+                    
+
+                    while (_counter < lines.Count())
+                    {
+                        operation = lines[_counter].Split(' ')[0];
+                        operation = input.Split(' ')[0];
+                        ExecuteOperation(puppetMaster, operation, lines[_counter]);
+                    }
+
+                   
+                }
+            }
+            else
+            {
+                while (true)
+                {
+                    Console.Write("Insert your command > "); input = Console.ReadLine();
+                    operation = input.Split(' ')[0];
+                    ExecuteOperation(puppetMaster, operation, input);
+
+                }
             }
         }
 
@@ -57,6 +90,7 @@ namespace PUPPETMASTER
                         try
                         {
                             puppetMaster.Server(input.Split(' ')[1], input.Split(' ')[2], Int32.Parse(input.Split(' ')[3]), Int32.Parse(input.Split(' ')[4]));
+                            _counter++;
                             break;
                         }
                         catch (FormatException)
@@ -69,21 +103,26 @@ namespace PUPPETMASTER
                             System.Console.WriteLine("Max_delay and Min_delay cannot be null");
                             break;
                         }
-
+                        
                     case "Client":
                         puppetMaster.Client(input.Split(' ')[1], input.Split(' ')[2], input.Split(' ')[3]);
+                        _counter++;
                         break;
                     case "Status":
                         puppetMaster.Status();
+                        _counter++;
                         break;
                     case "Crash":
                         puppetMaster.Crash(input.Split(' ')[1]);
+                        _counter++;
                         break;
                     case "Freeze":
                         puppetMaster.Freeze(input.Split(' ')[1]);
+                        _counter++;
                         break;
                     case "Unfreeze":
                         puppetMaster.Unfreeze(input.Split(' ')[1]);
+                        _counter++;
                         break;
                     case "Wait":
                         try
@@ -107,6 +146,7 @@ namespace PUPPETMASTER
                         foreach(string line in lines){
                             ExecuteOperation(puppetMaster, line.Split(' ')[0], line);
                         }
+                        _counter++;
                         break;
                     case "Exit":
                         System.Environment.Exit(1);
