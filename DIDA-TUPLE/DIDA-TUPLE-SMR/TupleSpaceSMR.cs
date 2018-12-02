@@ -382,7 +382,7 @@ namespace DIDA_TUPLE_SMR
 
         public void Crash()
         {
-            throw new NotImplementedException();
+            System.Environment.Exit(0);
         }
     }
 }

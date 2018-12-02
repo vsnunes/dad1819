@@ -89,7 +89,7 @@ namespace DIDA_CLIENT
                     Console.WriteLine(path);
                     lines = File.ReadAllLines(path);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
                     Console.ReadLine();
@@ -182,7 +182,7 @@ namespace DIDA_CLIENT
 
 
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Console.WriteLine("### ERROR: Invalid begin-repeat arg");
                     }
@@ -205,7 +205,7 @@ namespace DIDA_CLIENT
                             _counter++;
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Console.WriteLine("### ERROR: Invalid wait arg");
                     }

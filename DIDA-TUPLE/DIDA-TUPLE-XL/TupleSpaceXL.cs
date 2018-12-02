@@ -174,7 +174,7 @@ namespace DIDA_TUPLE_XL
 
         public void Crash()
         {
-            throw new NotImplementedException();
+           System.Environment.Exit(0);
         }
     }
 }

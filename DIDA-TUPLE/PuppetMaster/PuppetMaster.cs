@@ -71,31 +71,35 @@ namespace PUPPETMASTER
         }
 
         public void Crash(string processName) {
-            Process process = processNames[processName];
-            if (process.Type1 == Process.Type.CLIENT_XL || process.Type1 == Process.Type.CLIENT_SMR)
+            try
             {
-                IFrontEnd client = (IFrontEnd)Activator.GetObject(typeof(IFrontEnd), process.Url);
-                client.Crash();
-            }
-            else if (process.Type1 == Process.Type.SERVER_SMR)
+                Process process = processNames[processName];
+                if (process.Type1 == Process.Type.CLIENT_XL || process.Type1 == Process.Type.CLIENT_SMR)
+                {
+                    Console.WriteLine("You can't crash Clients");
+                }
+                else if (process.Type1 == Process.Type.SERVER_SMR)
+                {
+                    ITupleSpace smrServer = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), process.Url);
+                    smrServer.Crash();
+                }
+                else if (process.Type1 == Process.Type.SERVER_XL)
+                {
+                    ITupleSpaceXL xlServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), process.Url);
+                    xlServer.Crash();
+                }
+            }catch(System.Net.Sockets.SocketException)
             {
-                ITupleSpace smrServer = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), process.Url);
-                smrServer.Crash();
+                Console.WriteLine("Server with process name " + processName + " has crashed.");
             }
-            else if (process.Type1 == Process.Type.SERVER_XL)
-            {
-                ITupleSpaceXL xlServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), process.Url);
-                xlServer.Crash();
-            }
-            //System.Console.WriteLine("processName" + processName);
+           
         }
 
         public void Freeze(string processName) {
             Process process = processNames[processName];
             if(process.Type1 == Process.Type.CLIENT_XL || process.Type1 == Process.Type.CLIENT_SMR)
             {
-                IFrontEnd client = (IFrontEnd)Activator.GetObject(typeof(IFrontEnd), process.Url);
-                client.Freeze();
+                Console.WriteLine("Clients can't be frozen");
             }
             else if(process.Type1 == Process.Type.SERVER_SMR)
             {
@@ -115,8 +119,7 @@ namespace PUPPETMASTER
             Process process = processNames[processName];
             if (process.Type1 == Process.Type.CLIENT_XL || process.Type1 == Process.Type.CLIENT_SMR)
             {
-                IFrontEnd client = (IFrontEnd)Activator.GetObject(typeof(IFrontEnd), process.Url);
-                client.Unfreeze();
+                Console.WriteLine("Clients can't be Unfrozen");
             }
             else if (process.Type1 == Process.Type.SERVER_SMR)
             {
@@ -128,7 +131,6 @@ namespace PUPPETMASTER
                 ITupleSpaceXL xlServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), process.Url);
                 xlServer.Unfreeze();
             }
-            System.Console.WriteLine("processName" + processName);
         }
     }
 }
