@@ -26,17 +26,17 @@ namespace PUPPETMASTER
         }
 
         public void Server(string server_id, string URL, int min_delay, int max_delay) {
-            //Parse
             string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":10000/pcs";
-            if(processNames.ContainsKey(server_id))
+            string nameService = URL.Split('/')[3];
+
+            if (processNames.ContainsKey(server_id))
             {
                 Console.WriteLine("Server ID already exists");
                 return;
             }
-
             IPCS pcs = null;
             pcs = (IPCS)Activator.GetObject(typeof(IPCS), urlPcs);
-            string type = pcs.Server(URL, min_delay, max_delay);
+            string type = pcs.Server(URL, min_delay, max_delay, nameService);
             if (type == "SMR")
                 processNames.Add(server_id, new Process(URL, Process.Type.SERVER_SMR));
             else if (type == "XL")

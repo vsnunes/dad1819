@@ -27,14 +27,20 @@ namespace DIDA_TUPLE_XL
 
                 ChannelServices.RegisterChannel(channel, false);
 
-            }
                 RemotingConfiguration.RegisterWellKnownServiceType(
                     typeof(TupleSpaceXL),
                     "DIDA-TUPLE-XL",
                     WellKnownObjectMode.Singleton);
-            
+            }
 
-                System.Console.WriteLine("DIDA-TUPLE-XL Server Started!");
+            RemotingConfiguration.RegisterWellKnownServiceType(
+                     typeof(TupleSpaceXL),
+                     args[1],
+                     WellKnownObjectMode.Singleton);
+
+
+
+                System.Console.WriteLine(args[1] + ": DIDA-TUPLE-XL Server Started!");
                 System.Console.WriteLine("---------------");
                 System.Console.WriteLine("<Enter> to exit...");
                 System.Console.ReadLine();

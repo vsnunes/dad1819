@@ -23,15 +23,15 @@ namespace PCS
                 _type = ServerType.SMR;
         }
 
-        public string Server(string url, int min_delay, int max_delay)
+        public string Server(string url, int min_delay, int max_delay, string nameService)
         {
             try
             {
-                string port = url.Split(':')[2].Split('/')[0];
+                string args = url.Split(':')[2].Split('/')[0] + " " + nameService;
 
                 if (_type == ServerType.SMR)
                 {
-                    ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-SMR/bin/Debug/DIDA-TUPLE-SMR.exe"), port);
+                    ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-SMR/bin/Debug/DIDA-TUPLE-SMR.exe"), args);
                     info.CreateNoWindow = false;
                     info.UseShellExecute = true;
                     Process processChild = Process.Start(info);
@@ -40,7 +40,7 @@ namespace PCS
                 }
                 else if (_type == ServerType.XL)
                 {
-                    ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-XL/bin/Debug/DIDA-TUPLE-XL.exe"), port);
+                    ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-XL/bin/Debug/DIDA-TUPLE-XL.exe"), args);
                     info.CreateNoWindow = false;
                     info.UseShellExecute = true;
                     Process processChild = Process.Start(info);
@@ -90,11 +90,6 @@ namespace PCS
                 return null;
             }
            
-        }
-
-        public string Status()
-        {
-            return "STAAAAAAAAAAAAAAAAAAAAAAAAAAAATUS";
         }
 
     }

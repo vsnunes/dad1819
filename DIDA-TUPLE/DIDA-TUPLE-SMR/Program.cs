@@ -16,22 +16,25 @@ namespace DIDA_TUPLE_SMR
         static void Main(string[] args)
         {
             TcpChannel channel;
+            string name;
 
             if (args.Count() > 0)
             {
                 channel = new TcpChannel(Int32.Parse(args[0]));
+                name = args[1];
             }
             else
             {
                 channel = new TcpChannel(8088);
+                name = "DIDA-TUPLE-SMR";
             }
             
             ChannelServices.RegisterChannel(channel, false);
 
             TupleSpaceSMR server = new TupleSpaceSMR();
-            server.MyPath = "tcp://localhost:" + args[0] + "/DIDA-TUPLE-SMR";
+            server.MyPath = "tcp://localhost:" + args[0] + "/" + name;
 
-            RemotingServices.Marshal(server, "DIDA-TUPLE-SMR", typeof(TupleSpaceSMR));
+            RemotingServices.Marshal(server, name, typeof(TupleSpaceSMR));
 
             List<string> servers = new List<string>();
             try
