@@ -1,4 +1,3 @@
-wait 5
-begin-repeat 100
+begin-repeat 100000
 add <"2">
 end-repeat
