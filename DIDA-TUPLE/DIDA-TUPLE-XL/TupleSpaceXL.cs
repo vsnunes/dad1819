@@ -16,8 +16,6 @@ namespace DIDA_TUPLE_XL
         private List<Tuple> _tupleSpace;
         private Log _log;
 
-        private static object Lock = new object();
-
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
@@ -28,11 +26,6 @@ namespace DIDA_TUPLE_XL
             _view = View.Instance;
             _tupleSpace = new List<Tuple>();
             _lockList = new LockList();
-
-            //vitor: Hardcoded worker configuration!
-            _lockList.AddWorker(1);
-            _lockList.AddWorker(2);
-            _lockList.AddWorker(3);
         }
 
         public Log Log { get => _log; set => _log = value; }
@@ -54,24 +47,34 @@ namespace DIDA_TUPLE_XL
                         }
                     }
                     if (result == null) //stil has not find any match
-                        Monitor.Wait(_tupleSpace, new Random().Next(1, 50));
+                        Monitor.Wait(_tupleSpace);
                 }
             }
             Console.WriteLine("** XL READ: Just read " + result);
             return result;
         }
 
-        public void remove(int workerId, Tuple choice)
+        public void remove(Tuple tuple)
         {
-            Console.WriteLine("** START TAKE PHASE2 OF: " + choice);
-            
+            Tuple match = null;
             lock (_tupleSpace)
             {
-                _lockList.ReleaseAllLocks(workerId);
-                _tupleSpace.Remove(choice);
-            }
+                foreach (Tuple t in _tupleSpace)
+                {
+                    if (t.Equals(tuple))
+                    {
+                        match = t;
+                        break; //just found what i want to remove
+                    }
 
-            Console.WriteLine("** FINISHED TAKE PHASE2 OF: " + choice);
+                }
+
+                if (match != null)
+                {
+                    _tupleSpace.Remove(match);
+                }
+            }
+            Console.WriteLine("** XL REMOVE: Just removed " + tuple);
         }
 
         public int ItemCount()
@@ -86,67 +89,53 @@ namespace DIDA_TUPLE_XL
         /// <returns></returns>
         public List<Tuple> take(int workerId, int requestId, Tuple tuple)
         {
-            Console.WriteLine("** STARTING TAKE PHASE1 OF: " + tuple);
-            List<Tuple> matchingTuples;
+            List<Tuple> result = new List<Tuple>();
+            int timeout = 1000;
 
-            
-                do
-                {
-                    lock (Lock)
-                    {
-                        matchingTuples = match(workerId, tuple);
-                        if (matchingTuples == null || matchingTuples.Count() == 0)
-                            Monitor.Wait(Lock, new Random().Next(1, 50));
-                    }
-                } while (matchingTuples == null || matchingTuples.Count() == 0);
-                
 
-            Console.WriteLine("** FINISHED TAKE PHASE1 OF: " + tuple);
-            return matchingTuples;
-        }
-
-        public List<Tuple> match(int workerId, Tuple t)
-        {
-            List<Tuple> M = new List<Tuple>();
-
-            //vitor: nasty code ahead!
-
-            lock (_tupleSpace)
+            while (result.Count == 0)
             {
-                foreach (Tuple tuple in _tupleSpace)
+                bool lockTaken = false;
+                lock (_tupleSpace)
                 {
-                    if (tuple.Equals(t))
+                    foreach (Tuple t in _tupleSpace)
                     {
-                        if (_lockList.CheckTupleLock(tuple))
+                        if (t.Equals(tuple))
                         {
-                            _lockList.ReleaseAllLocks(workerId);
-                            return null; //failure
-                        }
-                        else
-                        {
-                            _lockList.AddElement(workerId, tuple);
-                            M.Add(tuple);
+                            Monitor.TryEnter(t, timeout, ref lockTaken);
+                            if (lockTaken)
+                            {
+                                _lockList.AddElement(workerId, t);
+                                result.Add(t);
+                            }
+                            else
+                            {
+                                //this rollback just release the locks
+                                Rollback(_lockList, workerId);
+                                result.Clear();
+                                break;
+                            }
+
                         }
                     }
+                    if (result.Count == 0) //stil has not find any match
+                        Monitor.Wait(_tupleSpace);
                 }
             }
-            return M;
+
+            Console.WriteLine("** XL TAKE-PHASE1");
+            return result;
         }
 
         public void write(int workerId, int requestId, Tuple tuple)
         {
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
-
-            lock (Lock)
+            lock (_tupleSpace)
             {
-                lock (_tupleSpace)
-                {
-                    _tupleSpace.Add(tuple);
-                }
-                Monitor.PulseAll(Lock);
+                _tupleSpace.Add(tuple);
+                Monitor.PulseAll(_tupleSpace);
             }
-
             Console.WriteLine("** XL WRITE: " + tuple);
         }
 

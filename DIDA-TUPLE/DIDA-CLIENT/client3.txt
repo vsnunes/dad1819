@@ -1,4 +1,4 @@
-begin-repeat 100
+begin-repeat 100000
 add <"2">
 take <"1">
 end-repeat

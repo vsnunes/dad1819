@@ -28,7 +28,7 @@ namespace DIDA_TUPLE_XL.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            _frontEnd = new FrontEndXL(1, true);
+            _frontEnd = new FrontEndXL(1);
             _fields = new List<Object>();
             _fields2 = new List<Object>();
             _fields3 = new List<Object>();
@@ -424,7 +424,7 @@ namespace DIDA_TUPLE_XL.Tests
                 Thread.CurrentThread.IsBackground = true;
                 //performs a take concurrently
                 _tupleSpace.take(3, 1, _tuple2);
-                _tupleSpace.remove(3, _tuple2);
+                _tupleSpace.remove(_tuple2);
                 return; //just to ensure that we stop the thread
             });
 
@@ -433,7 +433,7 @@ namespace DIDA_TUPLE_XL.Tests
                 Thread.CurrentThread.IsBackground = true;
                 //performs a take concurrently
                 _tupleSpace.take(4, 1, _tuple2);
-                _tupleSpace.remove(4, _tuple2);
+                _tupleSpace.remove(_tuple2);
                 return; //just to ensure that we stop the thread
             });
 
@@ -480,7 +480,7 @@ namespace DIDA_TUPLE_XL.Tests
                     _tupleSpace.write(1, 1 + i, _tuple1);
                     //take <"2">
                     _tupleSpace.take(1, 2 + i, _tuple2);
-                    _tupleSpace.remove(1, _tuple2);
+                    _tupleSpace.remove(_tuple2);
                 }
               
                 return; //just to ensure that we stop the thread
@@ -495,7 +495,7 @@ namespace DIDA_TUPLE_XL.Tests
                     _tupleSpace.write(2, 1 + i, _tuple2);
                     //take <"1">
                     _tupleSpace.take(2, 2 + i, _tuple1);
-                    _tupleSpace.remove(2, _tuple1);
+                    _tupleSpace.remove(_tuple1);
                 }
                 return; //just to ensure that we stop the thread
             });
