@@ -50,7 +50,6 @@ namespace PUPPETMASTER
                 Console.WriteLine("Client ID already exists");
                 return;
             }
-            //Parse
             string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":10000/pcs";
 
             IPCS pcs = null;
@@ -78,8 +77,6 @@ namespace PUPPETMASTER
                     ITupleSpaceXL XLServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), KVP.Value.Url);
                     XLServer.Status();
                 }
-
-
             }     
                    
         }
@@ -96,13 +93,16 @@ namespace PUPPETMASTER
                 {
                     ITupleSpace smrServer = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), process.Url);
                     smrServer.Crash();
+                    processNames.Remove(processName);
                 }
                 else if (process.Type1 == Process.Type.SERVER_XL)
                 {
                     ITupleSpaceXL xlServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), process.Url);
                     xlServer.Crash();
+                    processNames.Remove(processName);
                 }
-            }catch(System.Net.Sockets.SocketException)
+            }
+            catch(System.Net.Sockets.SocketException)
             {
                 Console.WriteLine("Server with process name " + processName + " has crashed.");
             }
