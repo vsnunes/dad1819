@@ -55,8 +55,8 @@ namespace DIDA_LIBRARY
                 
                 //Cleans the entire list
                 _lockList[workerId].Clear();
-
             }
+            _lockList.Remove(workerId);
         }
 
         public bool CheckTupleLock(Tuple tuple)

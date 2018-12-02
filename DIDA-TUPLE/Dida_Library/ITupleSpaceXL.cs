@@ -41,7 +41,7 @@ namespace DIDA_LIBRARY
         /// Executes second phase of take
         /// </summary>
         /// <param name="tuple"></param>
-        void remove(Tuple tuple);
+        void remove(Tuple tuple, int workerId);
 
         void Status();
         

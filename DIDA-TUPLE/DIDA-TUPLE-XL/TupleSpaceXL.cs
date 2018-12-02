@@ -21,7 +21,7 @@ namespace DIDA_TUPLE_XL
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
-        private LockList _lockList;
+        private static LockList _lockList;
 
         public TupleSpaceXL()
         {
@@ -69,7 +69,7 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void remove(Tuple tuple)
+        public void remove(Tuple tuple, int workerId)
         {
             Tuple match = null;
             lock (_tupleSpace)
@@ -86,6 +86,7 @@ namespace DIDA_TUPLE_XL
 
                 if (match != null)
                 {
+                    _lockList.ReleaseAllLocks(workerId);
                     _tupleSpace.Remove(match);
                 }
             }
@@ -106,16 +107,18 @@ namespace DIDA_TUPLE_XL
         {
             Thread.Sleep(generateRandomDelay());
             List<Tuple> result = new List<Tuple>();
-            int timeout = 1000;
+            int timeout = new Random().Next(100, 500);
 
 
             while (result.Count == 0)
             {
-                bool lockTaken = false;
                 lock (_tupleSpace)
                 {
+
                     foreach (Tuple t in _tupleSpace)
                     {
+                        bool lockTaken = false;
+
                         if (t.Equals(tuple))
                         {
                             Monitor.TryEnter(t, timeout, ref lockTaken);
@@ -124,14 +127,13 @@ namespace DIDA_TUPLE_XL
                                 _lockList.AddElement(workerId, t);
                                 result.Add(t);
                             }
-                            else
+                            /*else
                             {
                                 //this rollback just release the locks
-                                Rollback(_lockList, workerId);
+                                _lockList.ReleaseAllLocks(workerId);
                                 result.Clear();
                                 break;
-                            }
-
+                            }*/
                         }
                     }
                     if (result.Count == 0) //stil has not find any match
@@ -158,15 +160,6 @@ namespace DIDA_TUPLE_XL
 
 
         // ================= TWO PHASE COMMIT FOR TAKE OPERATIONS =================
-
-        /// <summary>
-        /// Unlock all previous lock items.
-        /// </summary>
-        public void Rollback(LockList locklist, int workerId)
-        {
-            locklist.ReleaseAllLocks(workerId);
-            Console.WriteLine("** XL ROLLBACK: Rollback this workerId " + workerId);
-        }
 
         public void Freeze()
         {

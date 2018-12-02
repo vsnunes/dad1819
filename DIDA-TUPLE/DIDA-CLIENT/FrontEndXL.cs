@@ -32,7 +32,7 @@ namespace DIDA_CLIENT
         /// </summary>
         public delegate Tuple RemoteAsyncReadDelegate(Tuple t);
 
-        public delegate void RemoteAsyncSecondPhaseDelegate(Tuple t);
+        public delegate void RemoteAsyncSecondPhaseDelegate(Tuple t, int workerId);
 
         /// <summary>
         /// Delegate for Writes that require workerId, requestId and a tuple.
@@ -168,6 +168,7 @@ namespace DIDA_CLIENT
 
         public Tuple Take(Tuple tuple)
         {
+            Console.WriteLine("Vou tentar take: " + tuple);
             List<string> actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
@@ -222,6 +223,7 @@ namespace DIDA_CLIENT
 
         public void Remove(Tuple tuple)
         {
+            Console.WriteLine("Remove o tuplo: " + tuple);
             List<string> actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
@@ -244,7 +246,7 @@ namespace DIDA_CLIENT
                 try
                 {
                     RemoteAsyncSecondPhaseDelegate RemoteDel = new RemoteAsyncSecondPhaseDelegate(server.remove);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, null, null);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, _workerId, null, null);
                 }
                 catch (Exception) { }
             }
