@@ -79,66 +79,42 @@ namespace DIDA_CLIENT
 
             Tuple _responseRead = null;
 
-            Thread task0 = new Thread(() =>
-            {
+            Thread[] threads = new Thread[number_servers];
 
-                while (_responseRead == null)
+            //Define all threads
+            int i = 0;
+            foreach (ITupleSpaceXL ts in serversObj)
+            {
+                threads[i++] = new Thread(() =>
                 {
-                    Tuple possible = serversObj[0].read(tuple);
-                    if (possible != null)
+
+                    while (_responseRead == null)
                     {
-                        lock (ReadLock)
+                        Tuple possible = ts.read(tuple);
+                        if (possible != null)
                         {
-                            _responseRead = possible;
-                            readHandles[0].Set();
+                            lock (ReadLock)
+                            {
+                                _responseRead = possible;
+                                readHandles[0].Set();
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
 
-
-            Thread task1 = new Thread(() =>
+            //Start all threads
+            for (int j = 0; j < number_servers; j++)
             {
-                
-                while (_responseRead == null)
-                {
-                    Tuple possible = serversObj[1].read(tuple);
-                    if(possible != null)
-                    {
-                        lock (ReadLock)
-                        {
-                            _responseRead = possible;
-                            readHandles[0].Set();
-                        }
-                    }
-                }
-            });
-
-            Thread task2 = new Thread(() =>
-            {
-
-                while (_responseRead == null)
-                {
-                    Tuple possible = serversObj[2].read(tuple);
-                    if (possible != null)
-                    {
-                        lock (ReadLock)
-                        {
-                            _responseRead = possible;
-                            readHandles[0].Set();
-                        }
-                    }
-                }
-            });
-
-            task0.Start();
-            task1.Start();
-            task2.Start();
+                threads[j].Start();
+            }
+       
 
             while (_responseRead == null)
             {
                 Console.WriteLine("** FRONTEND READ: Not yet receive any reply let me wait...");
 
+                //Wait for the first read reply
                 WaitHandle.WaitAny(readHandles);
                    
             }
