@@ -228,7 +228,7 @@ namespace DIDA_CLIENT
         protected virtual object EvalField(ParseTree tree, params object[] paramlist)
         {
             if (this.GetValue(tree, TokenType.STRING, 0) != null)
-        		return ((string)(this.GetValue(tree, TokenType.STRING, 0))).TrimStart('"').TrimEnd('"');
+        		return ((string)(this.GetValue(tree, TokenType.STRING, 0)));
         	else if(this.GetValue(tree, TokenType.NUMBER, 0) != null)
         		return Convert.ToInt32(this.GetValue(tree, TokenType.NUMBER, 0));
         	else return this.GetValue(tree, TokenType.Function, 0);
@@ -237,17 +237,18 @@ namespace DIDA_CLIENT
         protected virtual object EvalFunction(ParseTree tree, params object[] paramlist)
         {
             //NASTY HAMMER
-        	int i = 0;
         	object[] args = null;
         	object one = null;
         	object two = null;
         	object three = null;
         
         	args= (object[])this.GetValue(tree, TokenType.Args, 0);
+        
+        	if (args != null) {
         	one = args[0];
         	two = args[1];
         	if (args.Length >= 3)
-        		three = args[3];
+        		three = args[2];
         
         	switch(this.GetValue(tree, TokenType.IDENTIFIER, 0)) {
         		case "DADTestA":
@@ -260,6 +261,8 @@ namespace DIDA_CLIENT
         
         	}
         	return null;
+        
+        } else return this.GetValue(tree, TokenType.IDENTIFIER, 0);
         }
 
         protected virtual object EvalArgs(ParseTree tree, params object[] paramlist)

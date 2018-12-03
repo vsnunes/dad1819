@@ -237,13 +237,18 @@ namespace DIDA_CLIENT
             }
 
             
-            tok = scanner.Scan(TokenType.FUNCTION_START);
-            n = node.CreateNode(tok, tok.ToString() );
-            node.Token.UpdateRange(tok);
-            node.Nodes.Add(n);
-            if (tok.Type != TokenType.FUNCTION_START) {
-                tree.Errors.Add(new ParseError("Unexpected token '" + tok.Text.Replace("\n", "") + "' found. Expected " + TokenType.FUNCTION_START.ToString(), 0x1001, 0, tok.StartPos, tok.StartPos, tok.Length));
-                return;
+            tok = scanner.LookAhead(TokenType.FUNCTION_START);
+            while (tok.Type == TokenType.FUNCTION_START)
+            {
+                tok = scanner.Scan(TokenType.FUNCTION_START);
+                n = node.CreateNode(tok, tok.ToString() );
+                node.Token.UpdateRange(tok);
+                node.Nodes.Add(n);
+                if (tok.Type != TokenType.FUNCTION_START) {
+                    tree.Errors.Add(new ParseError("Unexpected token '" + tok.Text.Replace("\n", "") + "' found. Expected " + TokenType.FUNCTION_START.ToString(), 0x1001, 0, tok.StartPos, tok.StartPos, tok.Length));
+                    return;
+                }
+            tok = scanner.LookAhead(TokenType.FUNCTION_START);
             }
 
             
@@ -257,13 +262,18 @@ namespace DIDA_CLIENT
             }
 
             
-            tok = scanner.Scan(TokenType.FUNCTION_END);
-            n = node.CreateNode(tok, tok.ToString() );
-            node.Token.UpdateRange(tok);
-            node.Nodes.Add(n);
-            if (tok.Type != TokenType.FUNCTION_END) {
-                tree.Errors.Add(new ParseError("Unexpected token '" + tok.Text.Replace("\n", "") + "' found. Expected " + TokenType.FUNCTION_END.ToString(), 0x1001, 0, tok.StartPos, tok.StartPos, tok.Length));
-                return;
+            tok = scanner.LookAhead(TokenType.FUNCTION_END);
+            while (tok.Type == TokenType.FUNCTION_END)
+            {
+                tok = scanner.Scan(TokenType.FUNCTION_END);
+                n = node.CreateNode(tok, tok.ToString() );
+                node.Token.UpdateRange(tok);
+                node.Nodes.Add(n);
+                if (tok.Type != TokenType.FUNCTION_END) {
+                    tree.Errors.Add(new ParseError("Unexpected token '" + tok.Text.Replace("\n", "") + "' found. Expected " + TokenType.FUNCTION_END.ToString(), 0x1001, 0, tok.StartPos, tok.StartPos, tok.Length));
+                    return;
+                }
+            tok = scanner.LookAhead(TokenType.FUNCTION_END);
             }
 
             parent.Token.UpdateRange(node.Token);

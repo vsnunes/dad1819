@@ -1,6 +1,5 @@
-Status
-Client ola ola ola
-Server ola ola 2 1
-Wait 1000
-Client ola addeus
-Load script
+Server s1 tcp://localhost:8088/DIDA-TUPLE-XL 0 0
+Server s2 tcp://localhost:8089/DIDA-TUPLE-XL 0 0
+Server s3 tcp://localhost:8090/DIDA-TUPLE-XL 0 0
+Client c1 tcp://localhost:9000/Cli client3
+Client c2 tcp://localhost:9000/Cli client2

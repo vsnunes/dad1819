@@ -38,35 +38,35 @@ namespace PUPPETMASTER
 
             if (args.Count() > 0)
             {
-                while (true)
-                {
-                    _counter = 0;
-                    input = args[0];
+                
+                _counter = 0;
+                input = args[0];
                     
 
-                    try
-                    {
-                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
+                try
+                {
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input);
                         
-                        lines = File.ReadAllLines(path);
+                    lines = File.ReadAllLines(path);
+                    foreach(string i in lines){
+                        Console.WriteLine(i);
                     }
-                    catch (Exception)
-                    {
-                        Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
-                        Console.ReadLine();
-                        break;
-                    }
-                    
 
                     while (_counter < lines.Count())
                     {
                         operation = lines[_counter].Split(' ')[0];
-                        operation = input.Split(' ')[0];
                         ExecuteOperation(puppetMaster, operation, lines[_counter]);
+                        _counter++;
                     }
 
-                   
                 }
+                catch (Exception)
+                {
+                    Console.WriteLine("Fizeste asneira. Ou o ficheiro não esta na diretoria certa ou o nome não é o correto. Tenta outra vez.");
+                    Console.ReadLine();
+                }
+                    
+                
             }
             else
             {
@@ -75,7 +75,6 @@ namespace PUPPETMASTER
                     Console.Write("Insert your command > "); input = Console.ReadLine();
                     operation = input.Split(' ')[0];
                     ExecuteOperation(puppetMaster, operation, input);
-
                 }
             }
         }
@@ -90,7 +89,6 @@ namespace PUPPETMASTER
                         try
                         {
                             puppetMaster.Server(input.Split(' ')[1], input.Split(' ')[2], Int32.Parse(input.Split(' ')[3]), Int32.Parse(input.Split(' ')[4]));
-                            _counter++;
                             break;
                         }
                         catch (FormatException)
@@ -106,23 +104,18 @@ namespace PUPPETMASTER
                         
                     case "Client":
                         puppetMaster.Client(input.Split(' ')[1], input.Split(' ')[2], input.Split(' ')[3]);
-                        _counter++;
                         break;
                     case "Status":
                         puppetMaster.Status();
-                        _counter++;
                         break;
                     case "Crash":
                         puppetMaster.Crash(input.Split(' ')[1]);
-                        _counter++;
                         break;
                     case "Freeze":
                         puppetMaster.Freeze(input.Split(' ')[1]);
-                        _counter++;
                         break;
                     case "Unfreeze":
                         puppetMaster.Unfreeze(input.Split(' ')[1]);
-                        _counter++;
                         break;
                     case "Wait":
                         try
@@ -146,7 +139,6 @@ namespace PUPPETMASTER
                         foreach(string line in lines){
                             ExecuteOperation(puppetMaster, line.Split(' ')[0], line);
                         }
-                        _counter++;
                         break;
                     case "Exit":
                         System.Environment.Exit(1);

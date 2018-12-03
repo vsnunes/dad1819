@@ -38,27 +38,28 @@ Fields -> Field (FIELD_SEP Field)*
 Field -> STRING | Function | NUMBER
 {
 	if ($STRING != null)
-		return ((string)($STRING)).TrimStart('"').TrimEnd('"');
+		return ((string)($STRING));
 	else if($NUMBER != null)
 		return Convert.ToInt32($NUMBER);
 	else return $Function;
 	
 };
 
-Function -> IDENTIFIER FUNCTION_START Args* FUNCTION_END
+Function -> IDENTIFIER FUNCTION_START* Args* FUNCTION_END*
 {
 	//NASTY HAMMER
-	int i = 0;
 	object[] args = null;
 	object one = null;
 	object two = null;
 	object three = null;
 
 	args= (object[])$Args;
+
+	if (args != null) {
 	one = args[0];
 	two = args[1];
 	if (args.Length >= 3)
-		three = args[3];
+		three = args[2];
 
 	switch($IDENTIFIER) {
 		case "DADTestA":
@@ -72,6 +73,7 @@ Function -> IDENTIFIER FUNCTION_START Args* FUNCTION_END
 	}
 	return null;
 
+} else return $IDENTIFIER;	
 };
 Args -> Arg (FIELD_SEP Arg)*
 {

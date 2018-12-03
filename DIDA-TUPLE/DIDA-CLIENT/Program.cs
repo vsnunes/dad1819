@@ -62,7 +62,6 @@ namespace DIDA_CLIENT
 
             string input = "";
             string operation;
-
             string prompt = "[CLIENT " + args[0] + " " + args[1] + "]";
 
             while (true)
@@ -85,7 +84,7 @@ namespace DIDA_CLIENT
                 }
                 try
                 {
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input + ".txt");
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input);
                     Console.WriteLine(path);
                     lines = File.ReadAllLines(path);
                 }
@@ -201,7 +200,7 @@ namespace DIDA_CLIENT
                         else
                         {
                             Console.WriteLine("I'm waiting ...");
-                            Thread.Sleep(seconds * 1000);
+                            Thread.Sleep(seconds);
                             Console.WriteLine("Finished waiting!");
                             _counter++;
                         }

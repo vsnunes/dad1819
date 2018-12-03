@@ -1,0 +1,12 @@
+Server s1 tcp://localhost:51001/S 1 3
+Server s2 tcp://localhost:51002/S 1 3
+Server s3 tcp://localhost:51003/S 1 3
+Wait 3000
+Status
+Client c1 tcp://localhost:61001/C sampleClientScript2-1.txt
+Client c2 tcp://localhost:61002/C sampleClientScript2-2.txt
+Status
+Wait 6000
+Server s4 tcp://localhost:51004/S 1 3
+Wait 9000
+Status
