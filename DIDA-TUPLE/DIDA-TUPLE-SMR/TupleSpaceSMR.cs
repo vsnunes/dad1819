@@ -13,6 +13,8 @@ namespace DIDA_TUPLE_SMR
         //Possibilidade de hashtable
         private List<Tuple> _tupleSpace;
 
+        private static bool freeze = false;
+
         private View _view;
 
         /// <summary>
@@ -76,6 +78,13 @@ namespace DIDA_TUPLE_SMR
 
         public Tuple read(Tuple tuple)
         {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             if (_type != Type.MASTER)
             {
                 return null;
@@ -146,6 +155,13 @@ namespace DIDA_TUPLE_SMR
         /// <returns></returns>
         public Tuple take(Tuple tuple)
         {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             if (_type != Type.MASTER)
             {
                 return null;
@@ -212,6 +228,13 @@ namespace DIDA_TUPLE_SMR
 
         public void write(Tuple tuple)
         {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             if (_type != Type.MASTER)
             {
                 return;
@@ -288,6 +311,13 @@ namespace DIDA_TUPLE_SMR
         }
 
         public bool areYouTheMaster(string serverPath) {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+
             lock (this)
             {
                 //First replica is my backup when i'm the master
@@ -304,6 +334,12 @@ namespace DIDA_TUPLE_SMR
 
         public void setNewMaster(string pathNewMaster)
         {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
             _masterPath = pathNewMaster;
             Console.WriteLine("** NEW_MASTER: I was informed that the new master is at: " + _masterPath);
         }
@@ -368,16 +404,29 @@ namespace DIDA_TUPLE_SMR
         }
 
         //Ping        
-        public void imAlive() { }
+        public void imAlive() {
+            //Checks if the server is freezed
+            lock (this)
+            {
+                while (freeze)
+                    Monitor.Wait(this);
+            }
+        }
 
         public void Freeze()
         {
-            throw new NotImplementedException();
+            lock(this) {
+                freeze = true;
+            }
         }
 
         public void Unfreeze()
         {
-            throw new NotImplementedException();
+            lock (this)
+            {
+                freeze = false;
+                Monitor.PulseAll(this);
+            }
         }
 
         public void Crash()

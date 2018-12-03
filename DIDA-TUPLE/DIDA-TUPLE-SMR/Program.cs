@@ -33,13 +33,14 @@ namespace DIDA_TUPLE_SMR
 
             TupleSpaceSMR server = new TupleSpaceSMR();
             server.MyPath = "tcp://localhost:" + args[0] + "/" + name;
+            
 
             RemotingServices.Marshal(server, name, typeof(TupleSpaceSMR));
-
+            
             List<string> servers = new List<string>();
             try
             {
-                string[] file = File.ReadAllLines("../../serverList.txt");
+                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-SMR/serverList.txt"));
                 
                 foreach (string i in file)
                 {
