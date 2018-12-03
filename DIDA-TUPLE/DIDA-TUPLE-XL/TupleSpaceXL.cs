@@ -24,13 +24,34 @@ namespace DIDA_TUPLE_XL
 
         private static LockList _lockList;
 
+        List<string> serverList = new List<string>();
         public TupleSpaceXL()
         {
-            _view = View.Instance;
+            _view = new View();
             _tupleSpace = new List<Tuple>();
             _lockList = new LockList();
             MinDelay = 0;
             MaxDelay = 0;
+
+            String myPath = null;
+            bool obtainedView = false;
+
+            foreach (string s in serverList)
+            {
+                try
+                {
+                    TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
+                    SetView(otherServer.AddView(myPath));
+                    obtainedView = true;
+                    break;
+                }
+                catch (Exception) { continue; }
+            }
+            if(obtainedView == false)
+            {
+                _view = new View();
+                _view.Add(myPath);
+            }
         }
 
 
@@ -215,6 +236,23 @@ namespace DIDA_TUPLE_XL
         {
             Console.WriteLine("My actual view:");
             Console.WriteLine(_view);
+        }
+
+        public View AddView(string url)
+        {
+            _view.Add(url);
+            return _view;
+        }
+
+        public View RemoveFromView(string url)
+        {
+            _view.Remove(url);
+            return _view;
+        }
+
+        public void SetView(View view)
+        {
+            _view = view;
         }
     }
 }

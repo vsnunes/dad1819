@@ -64,8 +64,8 @@ namespace DIDA_TUPLE_SMR
             _backup = "";
             _myPath = "";
             _servers = new List<string>();
-            _view = View.Instance;
-            _view.Add(MyPath);
+            //_view = View.Instance;
+            //_view.Add(MyPath);
         }
 
         

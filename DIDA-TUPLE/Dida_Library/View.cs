@@ -14,27 +14,14 @@ namespace DIDA_LIBRARY
     {
 
         private List<String> _servers;
-        private static View instance = null;
+
         private static readonly object padlock = new object();
 
-        private View()
+        private int version = 0;
+
+        public View()
         {
             _servers = new List<String>();
-        }
-
-        public static View Instance
-        {
-            get
-            {
-                lock (padlock)
-                {
-                    if (instance == null)
-                    {
-                        instance = new View();
-                    }
-                    return instance;
-                }
-            }
         }
 
         public List<string> Servers { get => _servers;}

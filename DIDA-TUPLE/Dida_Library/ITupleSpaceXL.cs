@@ -43,6 +43,12 @@ namespace DIDA_LIBRARY
         /// <param name="tuple"></param>
         void remove(Tuple tuple, int workerId);
 
+        View AddView(string URL);
+
+        View RemoveFromView(string URL);
+
+        void SetView(View view);
+
         void Status();
         
         void Freeze();
