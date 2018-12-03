@@ -174,40 +174,48 @@ namespace DIDA_CLIENT
 
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
+            Tuple tup = null;
 
-
-            _responseTake = new List<List<Tuple>>();
-            foreach (string serverPath in actualView)
+            while (tup == null)
             {
-                try
+                _responseTake = new List<List<Tuple>>();
+                foreach (string serverPath in actualView)
                 {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
+                    try
+                    {
+                        tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                        tupleSpace.ItemCount(); //just to check availability of the server
+                    }
+                    catch (Exception) { tupleSpace = null; }
+                    if (tupleSpace != null)
+                        serversObj.Add(tupleSpace);
                 }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
 
-            foreach (ITupleSpaceXL server in serversObj)
-            {
-                try
+                foreach (ITupleSpaceXL server in serversObj)
                 {
-                    RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
-                    AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                    try
+                    {
+                        RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
+                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
+                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
+                    }
+                    catch (Exception) { }
                 }
-                catch (Exception) { }
+
+                //miguel: this only works in perfect case
+                //TODO: One machine belonging to the view has just crashed
+
+                WaitHandle.WaitAll(takeHandles);
+
+
+                //Performs the intersection of all responses and decide using TupleSelection
+                tup = TupleSelection(Intersection(_responseTake));
+                if(tup == null)
+                {
+                    Remove(null);
+                }
+
             }
-
-            //miguel: this only works in perfect case
-            //TODO: One machine belonging to the view has just crashed
-
-            WaitHandle.WaitAll(takeHandles);
-
-
-            //Performs the intersection of all responses and decide using TupleSelection
-            Tuple tup = TupleSelection(Intersection(_responseTake));
 
             //Tuple tup is now selected lets remove
             if (tup != null)

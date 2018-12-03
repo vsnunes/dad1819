@@ -1,4 +1,3 @@
-﻿tcp://localhost:50001/S
-tcp://localhost:51002/S
+﻿tcp://localhost:8088/DIDA-TUPLE-XL
 tcp://localhost:51003/S
 tcp://localhost:51004/S

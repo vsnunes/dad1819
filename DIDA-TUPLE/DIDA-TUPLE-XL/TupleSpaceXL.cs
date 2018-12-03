@@ -78,26 +78,34 @@ namespace DIDA_TUPLE_XL
 
         public void remove(Tuple tuple, int workerId)
         {
-            Tuple match = null;
-            lock (_tupleSpace)
+            if (tuple == null)
             {
-                foreach (Tuple t in _tupleSpace)
+                _lockList.ReleaseAllLocks(workerId);
+            }
+            else
+            {
+                Tuple match = null;
+                lock (_tupleSpace)
                 {
-                    if (t.Equals(tuple))
+                    foreach (Tuple t in _tupleSpace)
                     {
-                        match = t;
-                        break; //just found what i want to remove
+                        if (t.Equals(tuple))
+                        {
+                            match = t;
+                            break; //just found what i want to remove
+                        }
+
                     }
 
+                    if (match != null)
+                    {
+                        _lockList.ReleaseAllLocks(workerId);
+                        _tupleSpace.Remove(match);
+                    }
                 }
-
-                if (match != null)
-                {
-                    _lockList.ReleaseAllLocks(workerId);
-                    _tupleSpace.Remove(match);
-                }
+                Console.WriteLine("** XL REMOVE: Just removed " + tuple);
             }
-            Console.WriteLine("** XL REMOVE: Just removed " + tuple);
+           
         }
 
         public int ItemCount()
