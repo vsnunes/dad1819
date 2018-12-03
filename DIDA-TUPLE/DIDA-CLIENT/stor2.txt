@@ -1,5 +1,0 @@
-wait 5
-begin-repeat 100
-add <"2">
-take <"1">
-end-repeat

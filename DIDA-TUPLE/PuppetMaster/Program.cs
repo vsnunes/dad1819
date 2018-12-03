@@ -45,7 +45,7 @@ namespace PUPPETMASTER
 
                 try
                 {
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input);
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../../scripts/" + input);
                         
                     lines = File.ReadAllLines(path);
                     foreach(string i in lines){
@@ -134,7 +134,7 @@ namespace PUPPETMASTER
                             break;
                         }
                     case "Load":
-                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input.Split(' ')[1] + ".txt");
+                        var path = Path.Combine(Directory.GetCurrentDirectory(), "../../../scripts/" + input.Split(' ')[1]);
                         string[] lines = File.ReadAllLines(path);
                         foreach(string line in lines){
                             ExecuteOperation(puppetMaster, line.Split(' ')[0], line);

@@ -1,4 +1,0 @@
-begin-repeat 1000
-add <"2"> 
-take <"1">
-end-repeat

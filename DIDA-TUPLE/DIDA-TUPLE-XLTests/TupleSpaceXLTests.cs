@@ -33,7 +33,7 @@ namespace DIDA_TUPLE_XL.Tests
             _fields2 = new List<Object>();
             _fields3 = new List<Object>();
             _fields4 = new List<Object>();
-            _tupleSpace = new TupleSpaceXL();
+            _tupleSpace = new TupleSpaceXL("tcp://localhost:8888/XL");
 
         }
 

@@ -1,3 +1,0 @@
-﻿tcp://localhost:8088/DIDA-TUPLE-XL
-tcp://localhost:8089/DIDA-TUPLE-XL
-tcp://localhost:8090/DIDA-TUPLE-XL

@@ -23,12 +23,11 @@ namespace PCS
                 _type = ServerType.SMR;
         }
 
-        public string Server(string url, int min_delay, int max_delay, string nameService)
+        public string Server(string url, int min_delay, int max_delay)
         {
             try
             {
-                string args = url.Split(':')[2].Split('/')[0] + " " + nameService + " " + min_delay + " " + max_delay;
-                Console.WriteLine("MIGUEL: " + args);
+                string args = url + " " + min_delay + " " + max_delay;
                 if (_type == ServerType.SMR)
                 {
                     ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-SMR/bin/Debug/DIDA-TUPLE-SMR.exe"), args);

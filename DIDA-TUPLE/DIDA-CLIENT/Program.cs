@@ -84,7 +84,8 @@ namespace DIDA_CLIENT
                 }
                 try
                 {
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../" + input);
+                    
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "../../../scripts/" + input);
                     Console.WriteLine(path);
                     lines = File.ReadAllLines(path);
                 }

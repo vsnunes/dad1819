@@ -9,7 +9,8 @@ namespace PUPPETMASTER
     {
         public string MyPath = null;
 
-        string[] file = File.ReadAllLines("../../pcsList.txt");
+        string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/pcsList.txt"));
+        
         List<IPCS> ipcs = new List<IPCS>();
 
         private static int XLFEcounter = 0;
@@ -27,7 +28,6 @@ namespace PUPPETMASTER
 
         public void Server(string server_id, string URL, int min_delay, int max_delay) {
             string urlPcs = URL.Split(':')[0] + ":" + URL.Split(':')[1] + ":10000/pcs";
-            string nameService = URL.Split('/')[3];
 
             if (processNames.ContainsKey(server_id))
             {
@@ -36,7 +36,7 @@ namespace PUPPETMASTER
             }
             IPCS pcs = null;
             pcs = (IPCS)Activator.GetObject(typeof(IPCS), urlPcs);
-            string type = pcs.Server(URL, min_delay, max_delay, nameService);
+            string type = pcs.Server(URL, min_delay, max_delay);
             if (type == "SMR")
                 processNames.Add(server_id, new Process(URL, Process.Type.SERVER_SMR));
             else if (type == "XL")
@@ -93,20 +93,20 @@ namespace PUPPETMASTER
                 {
                     ITupleSpace smrServer = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), process.Url);
                     smrServer.Crash();
-                    processNames.Remove(processName);
                 }
                 else if (process.Type1 == Process.Type.SERVER_XL)
                 {
                     ITupleSpaceXL xlServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), process.Url);
                     xlServer.Crash();
-                    processNames.Remove(processName);
                 }
             }
             catch(System.Net.Sockets.SocketException)
             {
                 Console.WriteLine("Server with process name " + processName + " has crashed.");
+                processNames.Remove(processName);
+
             }
-           
+
         }
 
         public void Freeze(string processName) {

@@ -40,7 +40,7 @@ namespace DIDA_TUPLE_SMR
             List<string> servers = new List<string>();
             try
             {
-                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-SMR/serverList.txt"));
+                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListSMR.txt"));
                 
                 foreach (string i in file)
                 {
