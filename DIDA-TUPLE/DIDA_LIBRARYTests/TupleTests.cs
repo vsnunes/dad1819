@@ -166,6 +166,38 @@ namespace DIDA_LIBRARY.Tests
         }
 
         [TestMethod()]
+        public void SimpleDistributeProp1Equals()
+        {
+            List<object> fields = new List<object>();
+            fields.Add("1");
+            Tuple t1 = new Tuple(fields);
+
+            List<object> fields2 = new List<object>();
+            fields2.Add("2");
+            Tuple t2 = new Tuple(fields2);
+
+            Assert.AreNotEqual(t1, t2);
+            Assert.AreNotEqual(t2, t1);
+
+        }
+
+        [TestMethod()]
+        public void SimpleDistributeProp2Equals()
+        {
+            List<object> fields = new List<object>();
+            fields.Add("1");
+            Tuple t1 = new Tuple(fields);
+
+            List<object> fields2 = new List<object>();
+            fields2.Add("1");
+            Tuple t2 = new Tuple(fields2);
+
+            Assert.AreEqual(t1, t2);
+            Assert.AreEqual(t2, t1);
+
+        }
+
+        [TestMethod()]
         public void GetNumberOfFieldsTest()
         {
             Assert.AreEqual(tuple1.GetNumberOfFields(), 3);

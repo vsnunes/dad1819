@@ -25,6 +25,9 @@ namespace DIDA_CLIENT.Tests
 
         private const string INST_3 = "add <\"dog\", DADTestA(1, \"Cat\")>";
 
+        private const string INST_4 = "read <\"1\">";
+        private const string INST_5 = "read <\"2\">";
+
         [TestInitialize]
         public void TestInitialize()
         {
@@ -89,6 +92,32 @@ namespace DIDA_CLIENT.Tests
             Assert.AreEqual(_tuple2.GetNumberOfFields(), t.GetNumberOfFields());
 
             Assert.AreEqual(_tuple2, t);
+        }
+
+        [TestMethod()]
+        public void ParseEqualsTest()
+        {
+            ParseTree tree1 = _parser.Parse(INST_4);
+
+            Assert.IsNotNull(tree1);
+
+            Tuple t1 = (Tuple)tree1.Eval(null);
+
+            Assert.IsNotNull(t1);
+
+            ParseTree tree2 = _parser.Parse(INST_5);
+
+            Assert.IsNotNull(tree2);
+
+            Tuple t2 = (Tuple)tree2.Eval(null);
+
+            Assert.IsNotNull(t2);
+
+            Assert.AreNotEqual(t1, t2);
+
+            Assert.AreNotEqual(t2, t1);
+
+
         }
 
       

@@ -52,14 +52,7 @@ namespace DIDA_CLIENT
             int number_servers = this.GetView().Count();
             numServers = number_servers;
             readHandles = new AutoResetEvent[1];
-            takeHandles = new AutoResetEvent[number_servers];
-
-            readHandles[0] = new AutoResetEvent(false);
-
-            for (int i = 0; i < number_servers; i++)
-            {
-                takeHandles[i] = new AutoResetEvent(false);
-            }
+            
 
         }
 
@@ -67,6 +60,7 @@ namespace DIDA_CLIENT
         /// First read response.
         /// It will be update on callback function
         /// </summary>
+        
         private static Tuple _responseRead = null;
 
         private static List<List<Tuple>> _responseTake = null;
@@ -133,11 +127,15 @@ namespace DIDA_CLIENT
 
         public Tuple Read(Tuple tuple)
         {
+            readHandles = new AutoResetEvent[1];
+            readHandles[0] = new AutoResetEvent(false);
 
             View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
+
+            _responseRead = null;
 
             //save remoting objects of all members of the view
             foreach (string serverPath in actualView.Servers)
@@ -179,6 +177,13 @@ namespace DIDA_CLIENT
 
         public Tuple Take(Tuple tuple)
         {
+            takeHandles = new AutoResetEvent[numServers];
+
+            for (int i = 0; i < numServers; i++)
+            {
+                takeHandles[i] = new AutoResetEvent(false);
+            }
+
             Console.WriteLine("Vou tentar take: " + tuple);
             View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
