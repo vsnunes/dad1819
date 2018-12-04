@@ -21,9 +21,9 @@ namespace DIDA_TUPLE_SMR
 
             if (args.Count() > 0)
             {
-                channel = new TcpChannel(Int32.Parse(args[0]));
-                name = args[1];
-                id = Int32.Parse(args[2]);
+                channel = new TcpChannel(Int32.Parse(args[0].Split(':')[2].Split('/')[0]));
+                name = args[0].Split('/')[3];
+                id = Int32.Parse(args[1]);
             }
             else
             {
@@ -35,7 +35,7 @@ namespace DIDA_TUPLE_SMR
             ChannelServices.RegisterChannel(channel, false);
 
             TupleSpaceSMR server = new TupleSpaceSMR();
-            server.MyPath = "tcp://localhost:" + args[0] + "/" + name;
+            server.MyPath = args[0];
             server.ServerId = id;
             
             RemotingServices.Marshal(server, name, typeof(TupleSpaceSMR));
@@ -47,7 +47,8 @@ namespace DIDA_TUPLE_SMR
                 
                 foreach (string i in file)
                 {
-                    if ("tcp://localhost:" + args[0] + "/DIDA-TUPLE-SMR" != i)
+                    //Just ignore my path when caching server's URL
+                    if (args[0] != i)
                     {
                         servers.Add(i);
                     }
@@ -83,8 +84,8 @@ namespace DIDA_TUPLE_SMR
                         logUpdated = true;
                         
                     }
-
-                    if (remoteServer.areYouTheMaster("tcp://localhost:" + args[0] + "/DIDA-TUPLE-SMR"))
+                    //ask if this replic is the master and give them my path
+                    if (remoteServer.areYouTheMaster(args[0]))
                     {
                         pathMaster = serverPath;
                         server.MasterPath = pathMaster;
