@@ -213,14 +213,15 @@ namespace DIDA_TUPLE_SMR
                     else _tupleSpace.Remove(result);
 
                     //if flag is true then write on current replic log
-                    if (writeOnLog)
-                    {
-                        //TODO: Fix deadlock bug on write issue #26
-                        _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
-                        _log.Increment();
-                    }
+                    
                 }
             }
+            if (writeOnLog)
+            {
+                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
+                _log.Increment();
+            }
+            
             Console.WriteLine("** EXECUTE_TAKE: " + tuple);
             return result;
             
