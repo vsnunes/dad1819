@@ -57,8 +57,5 @@
       <Name>DIDA_LIBRARY</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="serverList.txt" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

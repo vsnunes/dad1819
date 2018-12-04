@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Transactions;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
+using System.IO;
 
 namespace DIDA_TUPLE_XL
 {
@@ -24,7 +21,8 @@ namespace DIDA_TUPLE_XL
 
         private static LockList _lockList;
 
-        List<string> serverList = new List<string>();
+        private List<string> serverList = new List<string>();
+
         public TupleSpaceXL(String path)
         {
             _view = new View();
@@ -35,18 +33,40 @@ namespace DIDA_TUPLE_XL
 
             String myPath = path;
             bool obtainedView = false;
+            try
+            {
+                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
 
-            foreach (string s in serverList)
+                foreach (string i in file)
+                {
+                    if (i != myPath)
+                    {
+                        ServerList.Add(i);
+                    }
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                System.Console.WriteLine("Server List not Found");
+                System.Console.WriteLine("Aborting...");
+                System.Environment.Exit(1);
+            }
+
+            foreach (string s in ServerList)
             {
                 try
                 {
+                    Console.WriteLine("Trying to get view acesss: " + s);
                     TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
                     View currentView = otherServer.AddView(myPath);
                     SetView(currentView);
                     obtainedView = true;
                     break;
                 }
-                catch (Exception) { continue; }
+                catch (System.Net.Sockets.SocketException) {
+                    Console.WriteLine(s + " is not alive");
+                    continue;
+                }
             }
 
             //If no one replies to the view then i create my own view
@@ -68,6 +88,7 @@ namespace DIDA_TUPLE_XL
 
         public int MinDelay { get => _minDelay; set => _minDelay = value; }
         public int MaxDelay { get => _maxDelay; set => _maxDelay = value; }
+        public List<string> ServerList { get => serverList; set => serverList = value; }
 
         public Tuple read(Tuple tuple)
         {
@@ -245,6 +266,7 @@ namespace DIDA_TUPLE_XL
         {
             _view.Add(url);
             //RM para propagar a mudança
+            _view.IncrementVersion();
             return _view;
         }
 
@@ -252,9 +274,15 @@ namespace DIDA_TUPLE_XL
         {
             _view.Remove(url);
             //RM para propagar a mudança
+            _view.IncrementVersion();
             return _view;
         }
 
+        public View GetActualView()
+        {
+            return _view;
+        }
+       
         public void SetView(View view)
         {
             _view = view;
