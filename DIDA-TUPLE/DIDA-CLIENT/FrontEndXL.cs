@@ -45,21 +45,11 @@ namespace DIDA_CLIENT
 
         public static int numServers = 0;
 
+        private View _view = null;
+
         public FrontEndXL(int workerId)
         {
             _workerId = workerId;
-
-            int number_servers = this.GetView().Count();
-            numServers = number_servers;
-            readHandles = new AutoResetEvent[1];
-            takeHandles = new AutoResetEvent[number_servers];
-
-            readHandles[0] = new AutoResetEvent(false);
-
-            for (int i = 0; i < number_servers; i++)
-            {
-                takeHandles[i] = new AutoResetEvent(false);
-            }
 
         }
 
@@ -73,8 +63,15 @@ namespace DIDA_CLIENT
 
         public View GetView()
         {
+            if(_view != null)
+            {
+                return _view;
+            }
+
             string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
-            List<string> servers = new List<string>();
+
+            View mostRecentView = null;
+            View possibleView = null;
 
             foreach (string i in file)
             {
@@ -82,13 +79,19 @@ namespace DIDA_CLIENT
                 try
                 {
                     ITupleSpaceXL viewGetter = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), i);
-                    return viewGetter.GetActualView();
+                    possibleView = viewGetter.GetActualView();
+                    if(mostRecentView == null || mostRecentView.Version < possibleView.Version)
+                    {
+                        mostRecentView = possibleView;
+                    }
                 }
                 catch (System.Net.Sockets.SocketException)
                 {
                     Console.WriteLine("Cannot get View from " + i);
                     continue;
                 }
+                _view = mostRecentView;
+                return _view;
             }
             Console.WriteLine("No server is available. Press <Enter> to exit...");
             Console.ReadLine();
@@ -131,29 +134,70 @@ namespace DIDA_CLIENT
 
         }
 
+        /// <summary>
+        /// Test all servers in the current view and request view changes if discover some possible server crash
+        /// Cases: Catch on exception
+        /// </summary>
+        public List<ITupleSpaceXL> getServersFromView()
+        {
+            this.GetView();
+            List<string> possibleCrashed = null;
+            List<ITupleSpaceXL> liveServers = null;
+            ITupleSpaceXL server = null;
+            do
+            {
+                possibleCrashed = new List<string>();
+                server = null;
+                liveServers = new List<ITupleSpaceXL>();
+
+                List<string> actualServersOnView = _view.Servers.ToList();
+
+            
+                //Test if the server on this current view are still alive.
+                foreach (string serverPath in actualServersOnView)
+                {
+                    try
+                    {
+                        server = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                        View possibleNewView = server.GetActualView();
+                        if (_view.Version < possibleNewView.Version)
+                            _view = possibleNewView;
+                    }
+                    catch (System.Net.Sockets.SocketException)
+                    {
+                        possibleCrashed.Add(serverPath);
+                        continue;
+                    }
+                    liveServers.Add(server);
+
+                }
+
+                if (possibleCrashed.Count > 0)
+                {
+                    try
+                    {
+                        _view = liveServers[0].RemoveFromView(possibleCrashed);
+                    } catch(System.Net.Sockets.SocketException) {
+                        continue; //When the server just crashed when we are about to remove the crashes
+                    }
+                }
+            } while (possibleCrashed.Count > 0);
+            
+            //When there are no possible crashed servers just return the liveServers
+            return liveServers;
+
+
+ 
+        }
+
+
         public Tuple Read(Tuple tuple)
         {
+            readHandles = new AutoResetEvent[1];
 
-            View actualView = this.GetView();
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+            readHandles[0] = new AutoResetEvent(false);
 
-            ITupleSpaceXL tupleSpace = null;
-
-            //save remoting objects of all members of the view
-            foreach (string serverPath in actualView.Servers)
-            {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (Exception) { tupleSpace = null; }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
-
-
-            foreach (ITupleSpaceXL server in serversObj)
+            foreach (ITupleSpaceXL server in this.getServersFromView())
             {
                 try
                 {
@@ -184,6 +228,16 @@ namespace DIDA_CLIENT
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
+
+            int number_servers = this.GetView().Count();
+            numServers = number_servers;
+            takeHandles = new AutoResetEvent[number_servers];
+
+            for (int i = 0; i < number_servers; i++)
+            {
+                takeHandles[i] = new AutoResetEvent(false);
+            }
+
             //save remoting objects of all members of the view
             Tuple tup = null;
 

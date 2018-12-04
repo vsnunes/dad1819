@@ -265,16 +265,8 @@ namespace DIDA_TUPLE_XL
         public View AddView(string url)
         {
             _view.Add(url);
-            //RM para propagar a mudança
             _view.IncrementVersion();
-            return _view;
-        }
-
-        public View RemoveFromView(string url)
-        {
-            _view.Remove(url);
             //RM para propagar a mudança
-            _view.IncrementVersion();
             return _view;
         }
 
@@ -286,6 +278,20 @@ namespace DIDA_TUPLE_XL
         public void SetView(View view)
         {
             _view = view;
+        }
+
+        public View RemoveFromView(List<string> possibleCrashed)
+        {
+            foreach(string s in possibleCrashed)
+            {
+                //Freeze
+                _view.Remove(s);
+                //Unfreeze
+            }
+            //increment a cada remoção ou depois de tudo?
+            _view.IncrementVersion();
+            //RM TO ALL
+            return _view;
         }
     }
 }

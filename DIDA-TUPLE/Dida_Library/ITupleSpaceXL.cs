@@ -45,7 +45,7 @@ namespace DIDA_LIBRARY
 
         View GetActualView();
 
-        void SetView(View view);
+        View RemoveFromView(List<string> possibleCrashed);
 
         void Status();
         
