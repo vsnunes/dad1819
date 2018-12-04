@@ -13,6 +13,12 @@ namespace DIDA_TUPLE_SMR
         //Possibilidade de hashtable
         private List<Tuple> _tupleSpace;
 
+        /** Unique identifier of the server **/
+        private int _serverId;
+
+        private object PMLock = new object();
+        private object VCLock = new object();
+
         private static bool freeze = false;
 
         private View _view;
@@ -54,6 +60,7 @@ namespace DIDA_TUPLE_SMR
 
         public string MasterPath {set => _masterPath = value; }
         public Log Log { get => _log; set => _log = value; }
+        public int ServerId { get => _serverId; set => _serverId = value; }
 
         public TupleSpaceSMR()
         {
@@ -79,10 +86,10 @@ namespace DIDA_TUPLE_SMR
         public Tuple read(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock (this)
+            lock (PMLock)
             {
                 while (freeze)
-                    Monitor.Wait(this);
+                    Monitor.Wait(PMLock);
             }
 
             if (_type != Type.MASTER)
@@ -132,6 +139,10 @@ namespace DIDA_TUPLE_SMR
             return _log;
         }
 
+        public int GetID() {
+            return _serverId;
+        }
+
         public void executeLog(){
             List<Request> _requests = new List<Request>();
             _requests = _log.Requests;
@@ -156,10 +167,10 @@ namespace DIDA_TUPLE_SMR
         public Tuple take(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock (this)
+            lock (PMLock)
             {
                 while (freeze)
-                    Monitor.Wait(this);
+                    Monitor.Wait(PMLock);
             }
 
             if (_type != Type.MASTER)
@@ -218,8 +229,11 @@ namespace DIDA_TUPLE_SMR
             }
             if (writeOnLog)
             {
-                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
-                _log.Increment();
+                lock (this)
+                {
+                    _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
+                    _log.Increment();
+                }
             }
             
             Console.WriteLine("** EXECUTE_TAKE: " + tuple);
@@ -230,10 +244,10 @@ namespace DIDA_TUPLE_SMR
         public void write(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock (this)
+            lock (PMLock)
             {
                 while (freeze)
-                    Monitor.Wait(this);
+                    Monitor.Wait(PMLock);
             }
 
             if (_type != Type.MASTER)
@@ -289,8 +303,7 @@ namespace DIDA_TUPLE_SMR
         /// <returns></returns>
         public void commit(int id, Request.OperationType request, Tuple tuple)
         {
-            lock (this)
-            {
+
                 switch (request)
                 {
                     case Request.OperationType.WRITE:
@@ -307,47 +320,37 @@ namespace DIDA_TUPLE_SMR
 
                         
                 }
-            }
-
         }
 
         public bool areYouTheMaster(string serverPath) {
             //Checks if the server is freezed
-            lock (this)
+            lock (PMLock)
             {
                 while (freeze)
-                    Monitor.Wait(this);
+                    Monitor.Wait(PMLock);
             }
 
-            lock (this)
-            {
-                //First replica is my backup when i'm the master
-                if (_firstReplica)
-                {
-                    _replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
-                    _replic.setBackup(_myPath);
-                    _firstReplica = false;
-                }
-
-            }
+            
             return _type == Type.MASTER;
         }
 
         public void setNewMaster(string pathNewMaster)
         {
             //Checks if the server is freezed
-            lock (this)
+            lock (PMLock)
             {
                 while (freeze)
-                    Monitor.Wait(this);
+                    Monitor.Wait(PMLock);
             }
             _masterPath = pathNewMaster;
             Console.WriteLine("** NEW_MASTER: I was informed that the new master is at: " + _masterPath);
+            //New master so new machine to ping!
+            setBackup(_masterPath);
         }
 
         public void setIAmTheMaster() { _type = Type.MASTER; }
 
-        public void setBackup(string path){
+        public void setBackup(string path) {
 
             //Backup will store the path to the master.
             lock (this)
@@ -358,28 +361,89 @@ namespace DIDA_TUPLE_SMR
 
             Task.Run(() =>
             {
-                Thread.CurrentThread.IsBackground = true;
-                while (true)
+            Thread.CurrentThread.IsBackground = true;
+            int timeout = new Random().Next(3000, 10000);
+            while (true)
+            {
+                lock (PMLock)
                 {
-                    try
-                    {
-                        //is the master alive?
-                        _replic.imAlive();
-                        Console.WriteLine("My master is alive! Let me wait 10 secs!");
-                    }
-                    catch (Exception)
-                    {
-                        break;
-                    }
-                    Thread.Sleep(10000);
+                    while (freeze)
+                        Monitor.Wait(PMLock);
                 }
 
-                //My master has crashed!
-                lock (this)
+                try
                 {
-                    Console.WriteLine("My master has just crashed! I'm the master now!");
-                    this.setIAmTheMaster();
+                    //is the master alive?
+                    _replic.imAlive();
+                    Console.WriteLine("My master is alive! Let me wait " + timeout / 1000 + " seconds");
                 }
+                catch (Exception)
+                {
+                    break;
+                }
+                Thread.Sleep(timeout);
+            }
+
+            int minID = ServerId;
+
+            //Asks all servers for replying its IDs
+            foreach (string serverPath in _servers) {
+                TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
+                try
+                {
+                    int serverId = server.GetID();
+                    if (serverId < minID)
+                       minID = serverId;
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("** Replic at: " + serverPath + " not responding to my GetID command! Ignoring...");
+                }
+            }
+
+                //I'm the master when my ID is the smaller
+                if (minID == ServerId)
+                {
+
+                    //My master has crashed!
+                    lock (this)
+                    {
+                        Console.WriteLine("My master has just crashed! Let me freeze everything.");
+
+                        // ====== FREEZE PROCCESS ======
+                        foreach (string serverPath in _servers)
+                        {
+                            try
+                            {
+                                TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
+                                //Freeze all servers before setting i am the master to ensure no one is take my lidership
+                                //10 is the timeout, if i failed all replicas wait at least 10 seconds before unfreeze
+                                server.Freeze(10);
+                            }
+                            catch (Exception)
+                            {
+                                Console.WriteLine("** Replic at: " + serverPath + " not responding to my freeze command! Ignoring...");
+                            }
+                        }
+
+                        this.setIAmTheMaster();
+
+                        // ====== UNFREEZE PROCCESS ======
+                        foreach (string serverPath in _servers)
+                        {
+                            try
+                            {
+                                TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
+                                //Unfreeze all servers
+                                server.Unfreeze(10);
+                            }
+                            catch (Exception)
+                            {
+                                Console.WriteLine("** Replic at: " + serverPath + " not responding to my unfreeze command! Ignoring...");
+                            }
+                        }
+
+                    }
                     //But we need to update alive servers because they don't know that his
                     //master is not available!
                     foreach (string serverPath in _servers)
@@ -390,43 +454,67 @@ namespace DIDA_TUPLE_SMR
                             //I'm the master so inform others
                             server.setNewMaster(_myPath);
                             Console.WriteLine("** NEW_MASTER_UPDATE: Successfuly informed " + serverPath + " of who is the new master!");
-                    }
+                        }
                         catch (Exception)
                         {
                             Console.WriteLine("** NEW_MASTER_UPDATE: Tried to inform " + serverPath + " but its dead!");
                         }
                     }
-                
-                
+
+                }
                 return; //just to ensure that we stop the thread
             });
-
+        
             Console.WriteLine("** SETBACKUP: Is about to finish!");
         }
 
         //Ping        
         public void imAlive() {
             //Checks if the server is freezed
-            lock (this)
+            lock (PMLock)
             {
                 while (freeze)
-                    Monitor.Wait(this);
+                    Monitor.Wait(PMLock);
             }
         }
 
         public void Freeze()
         {
-            lock(this) {
+            lock(PMLock) {
                 freeze = true;
             }
         }
 
+        public void Freeze(int seconds)
+        {
+            lock (VCLock)
+            {
+                freeze = true;
+            }
+
+            Task.Run(() =>
+            {
+                Thread.Sleep(seconds * 1000);
+                lock(VCLock)
+                    Monitor.PulseAll(VCLock);
+            });
+        }
+
         public void Unfreeze()
         {
-            lock (this)
+            lock (PMLock)
             {
                 freeze = false;
-                Monitor.PulseAll(this);
+                Monitor.PulseAll(PMLock);
+            }
+        }
+
+        public void Unfreeze(int seconds)
+        {
+            lock (VCLock)
+            {
+                freeze = false;
+                Monitor.PulseAll(VCLock);
             }
         }
 

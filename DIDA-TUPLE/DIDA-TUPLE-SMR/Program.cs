@@ -17,24 +17,27 @@ namespace DIDA_TUPLE_SMR
         {
             TcpChannel channel;
             string name;
+            int id;
 
             if (args.Count() > 0)
             {
                 channel = new TcpChannel(Int32.Parse(args[0]));
                 name = args[1];
+                id = Int32.Parse(args[2]);
             }
             else
             {
                 channel = new TcpChannel(8088);
                 name = "DIDA-TUPLE-SMR";
+                id = 1;
             }
             
             ChannelServices.RegisterChannel(channel, false);
 
             TupleSpaceSMR server = new TupleSpaceSMR();
             server.MyPath = "tcp://localhost:" + args[0] + "/" + name;
+            server.ServerId = id;
             
-
             RemotingServices.Marshal(server, name, typeof(TupleSpaceSMR));
             
             List<string> servers = new List<string>();
@@ -85,8 +88,11 @@ namespace DIDA_TUPLE_SMR
                     {
                         pathMaster = serverPath;
                         server.MasterPath = pathMaster;
+                        //All replicas ping the master
+                        server.setBackup(pathMaster);
                         break;
                     }
+                  
 
                 }
                 catch (Exception) {

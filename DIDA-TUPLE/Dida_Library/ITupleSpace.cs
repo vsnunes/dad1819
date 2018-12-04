@@ -31,11 +31,17 @@
         /// <returns></returns>
         int ItemCount();
 
+        int GetID();
+
         void Status();
 
         void Freeze();
 
+        void Freeze(int seconds);
+
         void Unfreeze();
+
+        void Unfreeze(int seconds);
 
         void Crash();
     }
