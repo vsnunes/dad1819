@@ -10,9 +10,12 @@ namespace PCS
         public enum ServerType { XL, SMR };
         private ServerType _type;
 
+        private int ServerIDCounter;
+
         public PCS()
         {
             _type = ServerType.XL;
+            ServerIDCounter = 1;
         }
 
         public PCS(string Type)
@@ -21,24 +24,29 @@ namespace PCS
                 _type = ServerType.XL;
             else if (Type == "SMR")
                 _type = ServerType.SMR;
+
+            ServerIDCounter = 1;
         }
 
         public string Server(string url, int min_delay, int max_delay)
         {
             try
             {
-                string args = url + " " + min_delay + " " + max_delay;
+                string args;
                 if (_type == ServerType.SMR)
                 {
+                    args = url + " " + ServerIDCounter + " " + min_delay + " " + max_delay;
                     ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-SMR/bin/Debug/DIDA-TUPLE-SMR.exe"), args);
                     info.CreateNoWindow = false;
                     info.UseShellExecute = true;
                     Process processChild = Process.Start(info);
 
+                    ServerIDCounter++;
                     return "SMR";
                 }
                 else if (_type == ServerType.XL)
                 {
+                    args = url + " " + min_delay + " " + max_delay;
                     ProcessStartInfo info = new ProcessStartInfo(Path.Combine(Directory.GetCurrentDirectory(), "../../../DIDA-TUPLE-XL/bin/Debug/DIDA-TUPLE-XL.exe"), args);
                     info.CreateNoWindow = false;
                     info.UseShellExecute = true;
