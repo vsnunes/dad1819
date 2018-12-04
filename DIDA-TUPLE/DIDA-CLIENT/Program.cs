@@ -80,7 +80,7 @@ namespace DIDA_CLIENT
                     Console.WriteLine("take <\"A\",\"B\",\"C\">");
                     Console.WriteLine("exit");
                     Console.WriteLine();
-                    continue;
+                    break;
                 }
                 try
                 {
