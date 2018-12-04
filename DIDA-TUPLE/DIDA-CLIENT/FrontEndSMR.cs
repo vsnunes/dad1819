@@ -92,5 +92,10 @@ namespace DIDA_CLIENT
                 }catch(Exception) { Console.WriteLine("Server with address: " + i + "has crashed"); }
             }
         }
+
+        View IFrontEnd.GetView()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

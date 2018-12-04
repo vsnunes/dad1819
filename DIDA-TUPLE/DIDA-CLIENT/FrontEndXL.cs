@@ -2,10 +2,8 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
-using System.Text;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using DIDA_LIBRARY;
 using Tuple = DIDA_LIBRARY.Tuple;
 
@@ -73,16 +71,29 @@ namespace DIDA_CLIENT
 
         private static List<List<Tuple>> _responseTake = null;
 
-        public List<string> GetView()
+        public View GetView()
         {
             string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
             List<string> servers = new List<string>();
 
             foreach (string i in file)
             {
-                servers.Add(i);
+
+                try
+                {
+                    ITupleSpaceXL viewGetter = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), i);
+                    return viewGetter.GetActualView();
+                }
+                catch (System.Net.Sockets.SocketException)
+                {
+                    Console.WriteLine("Cannot get View from " + i);
+                    continue;
+                }
             }
-            return servers;
+            Console.WriteLine("No server is available. Press <Enter> to exit...");
+            Console.ReadLine();
+            Environment.Exit(0);
+            return null;
         }
 
         /// <summary>
@@ -123,13 +134,13 @@ namespace DIDA_CLIENT
         public Tuple Read(Tuple tuple)
         {
 
-            List<string> actualView = this.GetView();
+            View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
 
             //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
+            foreach (string serverPath in actualView.Servers)
             {
                 try
                 {
@@ -169,7 +180,7 @@ namespace DIDA_CLIENT
         public Tuple Take(Tuple tuple)
         {
             Console.WriteLine("Vou tentar take: " + tuple);
-            List<string> actualView = this.GetView();
+            View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
@@ -179,7 +190,7 @@ namespace DIDA_CLIENT
             while (tup == null)
             {
                 _responseTake = new List<List<Tuple>>();
-                foreach (string serverPath in actualView)
+                foreach (string serverPath in actualView.Servers)
                 {
                     try
                     {
@@ -232,12 +243,12 @@ namespace DIDA_CLIENT
         public void Remove(Tuple tuple)
         {
             Console.WriteLine("Remove o tuplo: " + tuple);
-            List<string> actualView = this.GetView();
+            View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
+            foreach (string serverPath in actualView.Servers)
             {
                 try
                 {
@@ -290,12 +301,12 @@ namespace DIDA_CLIENT
 
         public void Write(Tuple tuple)
         {
-            List<string> actualView = this.GetView();
+            View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
-            foreach (string serverPath in actualView)
+            foreach (string serverPath in actualView.Servers)
             {
                 try
                 {

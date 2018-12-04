@@ -12,7 +12,7 @@ namespace DIDA_LIBRARY
         /// Returns a List containing all paths to servers that beloging to this view.
         /// </summary>
         /// <returns></returns>
-        List<String> GetView();
+        View GetView();
         /// <summary>
         /// Performs a async read on all servers in the current view.
         /// </summary>

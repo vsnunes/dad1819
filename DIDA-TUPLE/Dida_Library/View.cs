@@ -10,6 +10,8 @@ namespace DIDA_LIBRARY
     /// Class for describing View sets.
     /// A view is a dynamic representation of alive servers.
     /// </summary>
+
+    [Serializable]
     public class View
     {
 
@@ -26,6 +28,8 @@ namespace DIDA_LIBRARY
 
         public List<string> Servers { get => _servers;}
 
+        public int Version { get => version; }
+
         public void Add(String str)
         {
             Servers.Add(str);
@@ -34,6 +38,16 @@ namespace DIDA_LIBRARY
         public void Remove(String str)
         {
             Servers.Remove(str);
+        }
+
+        public void IncrementVersion()
+        {
+            version++;
+        }
+
+        public int Count()
+        {
+            return _servers.Count;
         }
 
         public override string ToString()
