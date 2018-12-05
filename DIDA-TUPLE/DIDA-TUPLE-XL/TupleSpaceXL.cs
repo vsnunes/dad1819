@@ -27,6 +27,7 @@ namespace DIDA_TUPLE_XL
 
         public TupleSpaceXL(String path)
         {
+            _log = new Log();
             _view = new View();
             _tupleSpace = new List<Tuple>();
             _lockList = new LockList();
@@ -50,7 +51,6 @@ namespace DIDA_TUPLE_XL
                 }
                 catch (System.Net.Sockets.SocketException) {
                     Console.WriteLine(s + " is not alive");
-                    continue;
                 }
             }
 
@@ -222,7 +222,7 @@ namespace DIDA_TUPLE_XL
             {
                 lock (_log)
                 {
-                    _log.Add(_log.Counter, Request.OperationType.TAKE, tuple);
+                    _log.Add(_log.Counter, Request.OperationType.WRITE, tuple);
                     _log.Increment();
                 }
             }
@@ -267,6 +267,7 @@ namespace DIDA_TUPLE_XL
                 catch (Exception)
                 {
                     notalive.Add(i);
+                    Remove(i);
                 }
 
             }
@@ -280,17 +281,33 @@ namespace DIDA_TUPLE_XL
 
         public View AddView(string url)
         {
-            _view.Add(url);
-            //RM para propagar a mudança
-            _view.IncrementVersion();
+            if(_view.Servers.Contains(url) == false)
+            {
+                _view.Add(url);
+            }
+
+            return _view;
+        }
+
+        public View Remove(string url)
+        {
+            foreach(string server in _view.Servers)
+            {
+                if(server != myPath)
+                {
+                    TupleSpaceXL serverObj = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), server);
+                    serverObj.RemoveFromView(url);
+
+                }
+            }
+            this.RemoveFromView(url);
             return _view;
         }
 
         public View RemoveFromView(string url)
         {
-            _view.Remove(url);
-            //RM para propagar a mudança
-            _view.IncrementVersion();
+            if(_view.Servers.Contains(url))
+                _view.Remove(url);
             return _view;
         }
 
@@ -321,7 +338,7 @@ namespace DIDA_TUPLE_XL
                 }
                 else if (request.OperationId == Request.OperationType.TAKE)
                 {
-                    write(0, 0, request.Tuple, false);
+                    remove(request.Tuple, 0, false);
                 }
             }
         }

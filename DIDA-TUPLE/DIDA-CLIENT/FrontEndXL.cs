@@ -16,6 +16,8 @@ namespace DIDA_CLIENT
 
         private static Object TakeLock = new Object();
 
+        private View _view = null;
+
         private int _workerId;
         private int _requestId = 0;
 
@@ -48,9 +50,9 @@ namespace DIDA_CLIENT
         public FrontEndXL(int workerId)
         {
             _workerId = workerId;
+            _view = this.GetView();
 
             int number_servers = this.GetView().Count();
-            numServers = number_servers;
             readHandles = new AutoResetEvent[1];
             
 
@@ -67,6 +69,43 @@ namespace DIDA_CLIENT
 
         public View GetView()
         {
+            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+            List<string> toRemove = new List<string>();
+
+            if(_view != null)
+            {
+                foreach(string i in _view.Servers)
+                {
+                    try
+                    {
+                        ITupleSpaceXL viewGetter = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), i);
+                        View tempView = viewGetter.GetActualView();
+                        
+                        if (tempView.Version > _view.Version)
+                        {
+                            _view = tempView;
+                        }
+
+                        serversObj.Add(viewGetter);
+                        break;
+                    }
+                    catch (System.Net.Sockets.SocketException)
+                    {
+                        toRemove.Add(i);                        
+                    }
+                }
+                if(serversObj.Count > 0)
+                {
+                    foreach(string s in toRemove)
+                    {
+                        serversObj[0].Remove(s);
+                        _view.Remove(s);
+                    }
+                    
+                }
+                return _view;
+            }
+
             string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
             List<string> servers = new List<string>();
 
@@ -132,6 +171,7 @@ namespace DIDA_CLIENT
 
             View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+            List<string> toRemove = new List<string>();
 
             ITupleSpaceXL tupleSpace = null;
 
@@ -145,9 +185,25 @@ namespace DIDA_CLIENT
                     tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
                     tupleSpace.ItemCount(); //just to check availability of the server
                 }
-                catch (Exception) { tupleSpace = null; }
+                catch (System.Net.Sockets.SocketException) {
+                    tupleSpace = null;
+                    toRemove.Add(serverPath);
+                }
                 if (tupleSpace != null)
                     serversObj.Add(tupleSpace);
+            }
+
+            if (serversObj.Count > 0)
+            {
+                foreach (string crashed in toRemove)
+                {
+                    //only one can crash so serverObj is obviously online
+                    _view = serversObj[0].Remove(crashed);
+                }
+            }
+            else {
+                Console.WriteLine("All servers are dead! Exiting...");
+                Environment.Exit(1);
             }
 
 
@@ -159,7 +215,7 @@ namespace DIDA_CLIENT
                     AsyncCallback RemoteCallback = new AsyncCallback(CallbackRead);
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, CallbackRead, null);
                 }
-                catch (Exception) { Console.WriteLine("** FRONTEND READ: Cannot invoke read on server!"); }
+                catch (System.Net.Sockets.SocketException) { Console.WriteLine("** FRONTEND READ: Cannot invoke read on server!"); }
             }
 
             while (_responseRead == null)
@@ -177,21 +233,25 @@ namespace DIDA_CLIENT
 
         public Tuple Take(Tuple tuple)
         {
-            takeHandles = new AutoResetEvent[numServers];
+            View actualView = this.GetView();
+            int numberServers = actualView.Servers.Count;
+            numServers = numberServers;
+            takeHandles = new AutoResetEvent[numberServers];
 
-            for (int i = 0; i < numServers; i++)
+            for (int i = 0; i < actualView.Servers.Count; i++)
             {
                 takeHandles[i] = new AutoResetEvent(false);
             }
 
             Console.WriteLine("Vou tentar take: " + tuple);
-            View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+
+            List<string> toRemove = new List<string>();
 
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
             Tuple tup = null;
-
+            
             while (tup == null)
             {
                 _responseTake = new List<List<Tuple>>();
@@ -202,9 +262,26 @@ namespace DIDA_CLIENT
                         tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
                         tupleSpace.ItemCount(); //just to check availability of the server
                     }
-                    catch (Exception) { tupleSpace = null; }
+                    catch (System.Net.Sockets.SocketException) {
+                        tupleSpace = null;
+                        toRemove.Add(serverPath);
+                    }
                     if (tupleSpace != null)
                         serversObj.Add(tupleSpace);
+                }
+
+                if (serversObj.Count > 0)
+                {
+                    foreach (string crashed in toRemove)
+                    {
+                        //only one can crash so serverObj is obviously online
+                        _view = serversObj[0].Remove(crashed);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("All servers are dead! Exiting...");
+                    Environment.Exit(1);
                 }
 
                 foreach (ITupleSpaceXL server in serversObj)
@@ -215,7 +292,14 @@ namespace DIDA_CLIENT
                         AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
                         IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, CallbackTake, null);
                     }
-                    catch (Exception) { }
+                    catch (System.Net.Sockets.SocketException) {
+                        lock (TakeLock)
+                        {
+                            takeHandles[takeCounter++].Set();
+                            if (takeCounter == numServers)
+                                takeCounter = 0;
+                        }
+                    }
                 }
 
                 //miguel: this only works in perfect case
@@ -309,6 +393,8 @@ namespace DIDA_CLIENT
             View actualView = this.GetView();
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
 
+            List<string> toRemove = new List<string>();
+
             ITupleSpaceXL tupleSpace = null;
             //save remoting objects of all members of the view
             foreach (string serverPath in actualView.Servers)
@@ -318,10 +404,30 @@ namespace DIDA_CLIENT
                     tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
                     tupleSpace.ItemCount(); //just to check availability of the server
                 }
-                catch (Exception) { tupleSpace = null; Console.WriteLine("** FRONTEND WRITE: Could not connected to server at " + serverPath); }
+                catch (System.Net.Sockets.SocketException)
+                {
+                    tupleSpace = null;
+                    Console.WriteLine("** FRONTEND WRITE: Could not connected to server at " + serverPath);
+                    toRemove.Add(serverPath);
+                }
                 if (tupleSpace != null)
                     serversObj.Add(tupleSpace);
             }
+
+            if (serversObj.Count > 0)
+            {
+
+                foreach (string crashed in toRemove)
+                {
+                   _view = serversObj[0].Remove(crashed);
+                }
+                
+            }
+            else {
+                Console.WriteLine("All servers are dead! Exiting...");
+                Environment.Exit(1);
+            }
+
 
             foreach (ITupleSpaceXL server in serversObj)
             {
@@ -330,7 +436,10 @@ namespace DIDA_CLIENT
                     RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
                     IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, true, null, null);
                 }
-                catch (Exception) { Console.WriteLine("** FRONTEND WRITE: Could not call write on server"); }
+                catch (System.Net.Sockets.SocketException) {
+                    Console.WriteLine("** FRONTEND WRITE: Could not call write on server");
+
+                }
             }
             _requestId++;
             Console.WriteLine("** FRONTEND WRITE: Just write " + tuple);

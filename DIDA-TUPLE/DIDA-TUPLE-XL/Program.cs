@@ -84,7 +84,7 @@ namespace DIDA_TUPLE_XL
                     }
                     
                 }
-                catch (Exception)
+                catch (System.Net.Sockets.SocketException e)
                 {
                     Console.WriteLine(" attempt -> Failed reaching " + serverPath);
                 }
