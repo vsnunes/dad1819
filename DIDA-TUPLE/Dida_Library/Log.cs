@@ -25,7 +25,12 @@ namespace DIDA_LIBRARY
         public void Add(int requestId, Request.OperationType operationId, Tuple tuple, bool master){
             Requests.Add(new Request(requestId, operationId, tuple));
         }
-        
+
+        public void Add(int requestId, Request.OperationType operationId, Tuple tuple)
+        {
+            Requests.Add(new Request(requestId, operationId, tuple));
+        }
+
         public void Remove(int requestId){
             for(int i = 0; i < Requests.Count(); i++){
                 if (Requests.ElementAt(i).RequestId == requestId){

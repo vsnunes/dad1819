@@ -20,7 +20,7 @@ namespace DIDA_LIBRARY
         /// <param name="workerId">The client/worker identification.</param>
         /// <param name="requestId">The request identification of this operation.</param>
         /// <param name="tuple">A tupple to be written.</param>
-        void write(int workerId, int requestId, Tuple tuple);
+        void write(int workerId, int requestId, Tuple tuple, bool writeOnLog=true);
 
         /// <summary>
         /// Reads and takes a tuple from the tuple space.
@@ -41,7 +41,7 @@ namespace DIDA_LIBRARY
         /// Executes second phase of take
         /// </summary>
         /// <param name="tuple"></param>
-        void remove(Tuple tuple, int workerId);
+        void remove(Tuple tuple, int workerId, bool writeOnLog = true);
 
         View GetActualView();
 
@@ -54,6 +54,8 @@ namespace DIDA_LIBRARY
         void Unfreeze();
 
         void Crash();
+
+        Log fetchLog();
 
     }
 }

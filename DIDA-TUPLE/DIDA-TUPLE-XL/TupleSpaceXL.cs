@@ -23,6 +23,8 @@ namespace DIDA_TUPLE_XL
 
         private List<string> serverList = new List<string>();
 
+        private string myPath;
+
         public TupleSpaceXL(String path)
         {
             _view = new View();
@@ -31,26 +33,9 @@ namespace DIDA_TUPLE_XL
             MinDelay = 0;
             MaxDelay = 0;
 
-            String myPath = path;
+            myPath = path;
             bool obtainedView = false;
-            try
-            {
-                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
-
-                foreach (string i in file)
-                {
-                    if (i != myPath)
-                    {
-                        ServerList.Add(i);
-                    }
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                System.Console.WriteLine("Server List not Found");
-                System.Console.WriteLine("Aborting...");
-                System.Environment.Exit(1);
-            }
+           
 
             foreach (string s in ServerList)
             {
@@ -89,6 +74,7 @@ namespace DIDA_TUPLE_XL
         public int MinDelay { get => _minDelay; set => _minDelay = value; }
         public int MaxDelay { get => _maxDelay; set => _maxDelay = value; }
         public List<string> ServerList { get => serverList; set => serverList = value; }
+        public string MyPath { get => myPath; set => myPath = value; }
 
         public Tuple read(Tuple tuple)
         {
@@ -121,7 +107,7 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void remove(Tuple tuple, int workerId)
+        public void remove(Tuple tuple, int workerId, bool writeOnLog = true)
         {
             if (tuple == null)
             {
@@ -146,18 +132,19 @@ namespace DIDA_TUPLE_XL
                     {
                         _lockList.ReleaseAllLocks(workerId);
                         _tupleSpace.Remove(match);
+                        if (writeOnLog)
+                        {
+                            lock (_log)
+                            {
+                                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple);
+                                _log.Increment();
+                            }
+                        }
                     }
                 }
                 Console.WriteLine("** XL REMOVE: Just removed " + tuple);
             }
-           /*
-           lock (this)
-            {
-                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple);
-                _log.Increment();
-            }
-            */
-
+           
         }
 
         public int ItemCount()
@@ -201,13 +188,6 @@ namespace DIDA_TUPLE_XL
                                 _lockList.AddElement(workerId, t);
                                 result.Add(t);
                             }
-                            /*else
-                            {
-                                //this rollback just release the locks
-                                _lockList.ReleaseAllLocks(workerId);
-                                result.Clear();
-                                break;
-                            }*/
                         }
                     }
                     if (result.Count == 0) //stil has not find any match
@@ -219,7 +199,7 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void write(int workerId, int requestId, Tuple tuple)
+        public void write(int workerId, int requestId, Tuple tuple, bool writeOnLog=true)
         {
             //Checks if the server is freezed
             lock (this)
@@ -237,11 +217,15 @@ namespace DIDA_TUPLE_XL
                 Monitor.PulseAll(_tupleSpace);
             }
             Console.WriteLine("** XL WRITE: " + tuple);
-           /* lock (this)
+
+            if (writeOnLog)
             {
-                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
-                _log.Increment();
-            }*/
+                lock (_log)
+                {
+                    _log.Add(_log.Counter, Request.OperationType.TAKE, tuple);
+                    _log.Increment();
+                }
+            }
         }
 
 
@@ -298,6 +282,28 @@ namespace DIDA_TUPLE_XL
         public void SetView(View view)
         {
             _view = view;
+        }
+
+        public Log fetchLog()
+        {
+            return _log;
+        }
+
+        public void executeLog() {
+            List<Request> _requests = new List<Request>();
+            _requests = _log.Requests;
+            
+            foreach (Request request in _requests)
+            {
+                if (request.OperationId == Request.OperationType.WRITE)
+                {
+                    write(0, 0, request.Tuple, false);
+                }
+                else if (request.OperationId == Request.OperationType.TAKE)
+                {
+                    write(0, 0, request.Tuple, false);
+                }
+            }
         }
     }
 }

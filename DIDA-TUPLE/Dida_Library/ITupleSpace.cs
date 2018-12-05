@@ -48,5 +48,7 @@
         void Unfreeze(int seconds);
 
         void Crash();
+
+        Log fetchLog();
     }
 }
