@@ -90,7 +90,6 @@ namespace DIDA_TUPLE_XL
                 }
 
             }
-
             server.Unfreeze();
 
             System.Console.WriteLine(args[0].Split('/')[3] + ": DIDA-TUPLE-XL Server Started!");

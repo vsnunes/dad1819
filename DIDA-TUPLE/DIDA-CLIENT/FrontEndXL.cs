@@ -72,7 +72,7 @@ namespace DIDA_CLIENT
             List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
             List<string> toRemove = new List<string>();
 
-            if(_view != null)
+           /* if(_view != null)
             {
                 foreach(string i in _view.Servers)
                 {
@@ -104,7 +104,7 @@ namespace DIDA_CLIENT
                     
                 }
                 return _view;
-            }
+            }*/
 
             string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
             List<string> servers = new List<string>();

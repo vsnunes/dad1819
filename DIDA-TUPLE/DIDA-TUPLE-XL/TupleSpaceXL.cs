@@ -256,7 +256,8 @@ namespace DIDA_TUPLE_XL
         {
             Console.WriteLine("My actual view:");
             List<string> notalive = new List<string>();
-            foreach (string i in serverList)
+            List<string> servers = _view.Servers.ToList();
+            foreach (string i in servers)
             {
                 try
                 {
@@ -283,10 +284,30 @@ namespace DIDA_TUPLE_XL
         {
             if(_view.Servers.Contains(url) == false)
             {
-                _view.Add(url);
+                foreach(string s in _view.Servers)
+                {
+                    try
+                    {
+                        if (s != myPath)
+                        {
+                            TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
+                            otherServer.AddToView(url);
+                        }
+
+                    } catch(System.Net.Sockets.SocketException) {
+                        this.Remove(s);
+                    }
+                    AddToView(url);
+                }
             }
 
             return _view;
+        }
+
+        public void AddToView(string url)
+        {
+            _view.Add(url);
+            _view.IncrementVersion();
         }
 
         public View Remove(string url)
@@ -306,8 +327,11 @@ namespace DIDA_TUPLE_XL
 
         public View RemoveFromView(string url)
         {
-            if(_view.Servers.Contains(url))
+            if (_view.Servers.Contains(url))
+            {
                 _view.Remove(url);
+                _view.IncrementVersion();
+            }
             return _view;
         }
 
@@ -334,11 +358,11 @@ namespace DIDA_TUPLE_XL
             {
                 if (request.OperationId == Request.OperationType.WRITE)
                 {
-                    write(0, 0, request.Tuple, false);
+                    _tupleSpace.Add(request.Tuple);
                 }
                 else if (request.OperationId == Request.OperationType.TAKE)
                 {
-                    remove(request.Tuple, 0, false);
+                    _tupleSpace.Remove(request.Tuple);
                 }
             }
         }
