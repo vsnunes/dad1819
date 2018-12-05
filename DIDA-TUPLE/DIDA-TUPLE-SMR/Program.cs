@@ -37,7 +37,9 @@ namespace DIDA_TUPLE_SMR
             TupleSpaceSMR server = new TupleSpaceSMR();
             server.MyPath = args[0];
             server.ServerId = id;
-            
+
+            //if requests received, they are delayed until log recover and master finding complete
+            server.SoftFreeze();
             RemotingServices.Marshal(server, name, typeof(TupleSpaceSMR));
             
             List<string> servers = new List<string>();
@@ -67,38 +69,48 @@ namespace DIDA_TUPLE_SMR
 
             Console.WriteLine(server.Log);
 
-            foreach (string serverPath in servers) {
-                try
+            bool alreadyDiscoverMaster = false;
+            for (int i = 0; i < server.ServerId; i++)
+            {
+                foreach (string serverPath in servers)
                 {
-                    ITotalOrder remoteServer = (ITotalOrder)Activator.GetObject(typeof(ITotalOrder), serverPath);
-
-                    if (logUpdated == false)
+                    try
                     {
-                        //when the server start running fetch from one server the log
-                        //so i can sync my tuple space
-                        server.Log = remoteServer.fetchLog();
-                        Console.WriteLine(server.Log);
-                        //execute by order operation in that log
-                        server.executeLog();
+                        ITotalOrder remoteServer = (ITotalOrder)Activator.GetObject(typeof(ITotalOrder), serverPath);
 
-                        logUpdated = true;
-                        
+                        if (logUpdated == false)
+                        {
+                            //when the server start running fetch from one server the log
+                            //so i can sync my tuple space
+                            server.Log = remoteServer.fetchLog();
+                            Console.WriteLine(server.Log);
+                            //execute by order operation in that log
+                            server.executeLog();
+
+                            logUpdated = true;
+
+                        }
+                        //ask if this replic is the master and give them my path
+                        if (remoteServer.areYouTheMaster(args[0]))
+                        {
+                            pathMaster = serverPath;
+                            server.MasterPath = pathMaster;
+                            //All replicas ping the master
+                            server.setBackup(pathMaster);
+                            alreadyDiscoverMaster = true;
+                            break;
+                        }
+
+
                     }
-                    //ask if this replic is the master and give them my path
-                    if (remoteServer.areYouTheMaster(args[0]))
+                    catch (Exception)
                     {
-                        pathMaster = serverPath;
-                        server.MasterPath = pathMaster;
-                        //All replicas ping the master
-                        server.setBackup(pathMaster);
-                        break;
+                        Console.WriteLine((i + 1) + " attempt -> Failed reaching " + serverPath);
                     }
-                  
-
+                    
                 }
-                catch (Exception) {
-                    Console.WriteLine("Failed reaching " + serverPath);
-                }
+                if (alreadyDiscoverMaster)
+                    break;
             }
 
             //no master exists! so i am the master now!
@@ -110,6 +122,9 @@ namespace DIDA_TUPLE_SMR
             else {
                 Console.WriteLine("** STATUS: The master is at " + pathMaster);
             }
+
+            //log was updated and master search is over, so i can receive client requests
+            server.SoftUnFreeze();
 
             System.Console.WriteLine("DIDA-TUPLE-SMR Server Started!");
             System.Console.WriteLine("---------------");

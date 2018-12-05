@@ -150,7 +150,14 @@ namespace DIDA_TUPLE_XL
                 }
                 Console.WriteLine("** XL REMOVE: Just removed " + tuple);
             }
-           
+           /*
+           lock (this)
+            {
+                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple);
+                _log.Increment();
+            }
+            */
+
         }
 
         public int ItemCount()
@@ -230,6 +237,11 @@ namespace DIDA_TUPLE_XL
                 Monitor.PulseAll(_tupleSpace);
             }
             Console.WriteLine("** XL WRITE: " + tuple);
+           /* lock (this)
+            {
+                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple, _type == Type.MASTER);
+                _log.Increment();
+            }*/
         }
 
 

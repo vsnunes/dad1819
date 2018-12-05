@@ -39,6 +39,10 @@
 
         void Freeze(int seconds);
 
+        void SoftFreeze();
+
+        void SoftUnFreeze();
+
         void Unfreeze();
 
         void Unfreeze(int seconds);

@@ -18,8 +18,8 @@ namespace PCS
 
             if (args.Count() > 0)
             {
-                channel = new TcpChannel(Int32.Parse(args[0]));
-                pcs = new PCS(args[1]);
+                channel = new TcpChannel(10000);
+                pcs = new PCS(args[0]);
             }
             else
             {

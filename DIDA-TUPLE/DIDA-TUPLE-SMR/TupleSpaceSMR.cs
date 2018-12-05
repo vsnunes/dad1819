@@ -17,9 +17,15 @@ namespace DIDA_TUPLE_SMR
         private int _serverId;
 
         private object PMLock = new object();
+        private object SoftLock = new object();
         private object VCLock = new object();
-
+        
+        /** Complete freeze **/
         private static bool freeze = false;
+
+        /** Soft freeze: only operation except ping and areYouTheMaster **/
+        private static bool softFreeze = false;
+
 
         private View _view;
 
@@ -86,10 +92,10 @@ namespace DIDA_TUPLE_SMR
         public Tuple read(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock (PMLock)
+            lock (SoftLock)
             {
-                while (freeze)
-                    Monitor.Wait(PMLock);
+                while (softFreeze)
+                    Monitor.Wait(SoftLock);
             }
 
             if (_type != Type.MASTER)
@@ -167,10 +173,10 @@ namespace DIDA_TUPLE_SMR
         public Tuple take(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock (PMLock)
+            lock (SoftLock)
             {
-                while (freeze)
-                    Monitor.Wait(PMLock);
+                while (softFreeze)
+                    Monitor.Wait(SoftLock);
             }
 
             if (_type != Type.MASTER)
@@ -244,10 +250,10 @@ namespace DIDA_TUPLE_SMR
         public void write(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock (PMLock)
+            lock (SoftLock)
             {
-                while (freeze)
-                    Monitor.Wait(PMLock);
+                while (softFreeze)
+                    Monitor.Wait(SoftLock);
             }
 
             if (_type != Type.MASTER)
@@ -483,6 +489,24 @@ namespace DIDA_TUPLE_SMR
             lock(PMLock) {
                 freeze = true;
             }
+            SoftFreeze();
+        }
+
+        public void SoftFreeze()
+        {
+            lock (SoftLock)
+            {
+                softFreeze = true;
+            }
+        }
+
+        public void SoftUnFreeze()
+        {
+            lock (SoftLock)
+            {
+                softFreeze = false;
+                Monitor.PulseAll(SoftLock);
+            }
         }
 
         public void Freeze(int seconds)
@@ -507,6 +531,7 @@ namespace DIDA_TUPLE_SMR
                 freeze = false;
                 Monitor.PulseAll(PMLock);
             }
+            SoftUnFreeze();
         }
 
         public void Unfreeze(int seconds)
