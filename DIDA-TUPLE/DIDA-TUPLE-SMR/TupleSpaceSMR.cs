@@ -551,9 +551,26 @@ namespace DIDA_TUPLE_SMR
         public void Status()
         {
             Console.WriteLine("My actual view:");
+            List<string> notalive = new List<string>();
             foreach (string i in _servers)
             {
-                Console.WriteLine(i);
+                try
+                {
+                    TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), i);
+                    server.ItemCount();
+                    Console.WriteLine(i);
+                }
+                catch (Exception)
+                {
+                    notalive.Add(i);
+                }
+
+            }
+
+            Console.WriteLine("Not alive servers:");
+            foreach (string server in notalive)
+            {
+                Console.WriteLine(server);
             }
         }
     }

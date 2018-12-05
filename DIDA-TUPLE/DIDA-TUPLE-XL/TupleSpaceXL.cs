@@ -255,7 +255,27 @@ namespace DIDA_TUPLE_XL
         public void Status()
         {
             Console.WriteLine("My actual view:");
-            Console.WriteLine(_view);
+            List<string> notalive = new List<string>();
+            foreach (string i in serverList)
+            {
+                try
+                {
+                    TupleSpaceXL server = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), i);
+                    server.ItemCount();
+                    Console.WriteLine(i);
+                }
+                catch (Exception)
+                {
+                    notalive.Add(i);
+                }
+
+            }
+
+            Console.WriteLine("Not alive servers:");
+            foreach (string server in notalive)
+            {
+                Console.WriteLine(server);
+            }
         }
 
         public View AddView(string url)
