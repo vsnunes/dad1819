@@ -349,7 +349,8 @@ namespace DIDA_TUPLE_XL
         public View AddView(string url)
         {
             _view.Add(url);
-            onUpdate = true;
+            lock(onUpdateLock)
+                onUpdate = true;
             return _view;
 
         }

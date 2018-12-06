@@ -37,6 +37,8 @@ namespace DIDA_TUPLE_XL
 
             System.Console.WriteLine(args[0].Split('/')[3] + ": DIDA-TUPLE-XL Server Started!");
             System.Console.WriteLine("---------------");
+            System.Console.WriteLine("# of tuples: " + server.ItemCount());
+            System.Console.WriteLine("---------------");
             System.Console.WriteLine("<Enter> to exit...");
             System.Console.ReadLine();
             
