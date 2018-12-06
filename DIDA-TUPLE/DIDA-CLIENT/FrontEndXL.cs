@@ -284,20 +284,34 @@ namespace DIDA_CLIENT
                     Environment.Exit(1);
                 }
 
+                bool ViewOutOfDate;
+
                 foreach (ITupleSpaceXL server in serversObj)
                 {
-                    try
+                    ViewOutOfDate = true;
+                    while (ViewOutOfDate)
                     {
-                        RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
-                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
-                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, CallbackTake, null);
-                    }
-                    catch (System.Net.Sockets.SocketException) {
-                        lock (TakeLock)
+                        try
                         {
-                            takeHandles[takeCounter++].Set();
-                            if (takeCounter == numServers)
-                                takeCounter = 0;
+                            RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
+                            AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
+                            IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, CallbackTake, null);
+                            ViewOutOfDate = false;
+                        }
+                        catch (System.Net.Sockets.SocketException)
+                        {
+                            lock (TakeLock)
+                            {
+                                takeHandles[takeCounter++].Set();
+                                if (takeCounter == numServers)
+                                    takeCounter = 0;
+                            }
+                        }
+                        catch (ViewChangeException)
+                        {
+                            Console.WriteLine("** FRONTEND TAKE-PH1: View is out of date during take phase 1. It will be updated.");
+                            //Request the new view
+                            this.GetView();
                         }
                     }
                 }
@@ -428,17 +442,30 @@ namespace DIDA_CLIENT
                 Environment.Exit(1);
             }
 
+            bool ViewOutOfDate;
 
             foreach (ITupleSpaceXL server in serversObj)
             {
-                try
-                {
-                    RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, null, null);
-                }
-                catch (System.Net.Sockets.SocketException) {
-                    Console.WriteLine("** FRONTEND WRITE: Could not call write on server");
+                ViewOutOfDate = true;
 
+                while (ViewOutOfDate)
+                {
+                    try
+                    {
+                        RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
+                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, null, null);
+                        ViewOutOfDate = false;
+                    }
+                    catch (System.Net.Sockets.SocketException)
+                    {
+                        Console.WriteLine("** FRONTEND WRITE: Could not call write on server");
+                    }
+                    catch (ViewChangeException)
+                    {
+                        Console.WriteLine("** FRONTEND WRITE: View is out of date during write. It will be updated.");
+                        //Request the new view
+                        this.GetView();
+                    }
                 }
             }
             _requestId++;
