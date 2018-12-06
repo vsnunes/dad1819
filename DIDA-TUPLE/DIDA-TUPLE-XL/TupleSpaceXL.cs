@@ -36,7 +36,27 @@ namespace DIDA_TUPLE_XL
 
             myPath = path;
             bool obtainedView = false;
-           
+
+
+            try
+            {
+                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
+
+                foreach (string i in file)
+                {
+                    if (i != path)
+                    {
+
+                        ServerList.Add(i);
+                    }
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                System.Console.WriteLine("Server List not Found");
+                System.Console.WriteLine("Aborting...");
+                System.Environment.Exit(1);
+            }
 
             foreach (string s in ServerList)
             {
@@ -282,10 +302,13 @@ namespace DIDA_TUPLE_XL
 
         public View AddView(string url)
         {
+
             if(_view.Servers.Contains(url) == false)
             {
+                Console.WriteLine("** view servers: " + _view.Servers.Count);
                 foreach(string s in _view.Servers)
                 {
+                    Console.WriteLine("** ADD VIEW: " + s);
                     try
                     {
                         if (s != myPath)
@@ -295,10 +318,13 @@ namespace DIDA_TUPLE_XL
                         }
 
                     } catch(System.Net.Sockets.SocketException) {
+                        Console.WriteLine("** ADD VIEW excep: " + s);
                         this.Remove(s);
                     }
-                    AddToView(url);
+                    
                 }
+                Console.WriteLine("** ADD VIEW: myself " + url);
+                AddToView(url);
             }
 
             return _view;
@@ -312,7 +338,8 @@ namespace DIDA_TUPLE_XL
 
         public View Remove(string url)
         {
-            foreach(string server in _view.Servers)
+            this.RemoveFromView(url);
+            foreach (string server in _view.Servers)
             {
                 if(server != myPath)
                 {
@@ -321,7 +348,7 @@ namespace DIDA_TUPLE_XL
 
                 }
             }
-            this.RemoveFromView(url);
+            
             return _view;
         }
 

@@ -29,6 +29,8 @@ namespace DIDA_TUPLE_XL
 
             bool logUpdated = false;
 
+            ChannelServices.RegisterChannel(channel, false);
+
             TupleSpaceXL server = new TupleSpaceXL(args[0]);
 
             //Set min delay and max delay
@@ -38,28 +40,7 @@ namespace DIDA_TUPLE_XL
                 server.MaxDelay = Int32.Parse(args[2]);
             }
 
-            try
-            {
-                string[] file = File.ReadAllLines(Path.Combine(Directory.GetCurrentDirectory(), "../../../config/serverListXL.txt"));
-
-                foreach (string i in file)
-                {
-                    if (i != args[0])
-                    {
-
-                        server.ServerList.Add(i);
-                    }
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                System.Console.WriteLine("Server List not Found");
-                System.Console.WriteLine("Aborting...");
-                System.Environment.Exit(1);
-            }
-
-            ChannelServices.RegisterChannel(channel, false);
-
+   
             //if requests received, they are delayed until log recover and master finding complete
             server.Freeze();
             RemotingServices.Marshal(server, args[0].Split('/')[3], typeof(TupleSpaceXL));

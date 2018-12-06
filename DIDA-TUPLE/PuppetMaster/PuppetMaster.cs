@@ -67,6 +67,7 @@ namespace PUPPETMASTER
         public void Status() {
             foreach (KeyValuePair<string, Process> KVP in processNames)
             {
+                Console.WriteLine("Status: " + KVP.Key);
                 if (KVP.Value.Type1 == Process.Type.SERVER_SMR)
                 {
                     ITupleSpace smrServer = (ITupleSpace)Activator.GetObject(typeof(ITupleSpace), KVP.Value.Url);
