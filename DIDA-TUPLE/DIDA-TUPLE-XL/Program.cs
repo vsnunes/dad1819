@@ -42,36 +42,11 @@ namespace DIDA_TUPLE_XL
 
    
             //if requests received, they are delayed until log recover and master finding complete
-            server.Freeze();
+            //server.Freeze();
             RemotingServices.Marshal(server, args[0].Split('/')[3], typeof(TupleSpaceXL));
 
-            foreach (string serverPath in server.ServerList)
-            {
-                try
-                {
-                    ITupleSpaceXL remoteServer = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-
-                    if (logUpdated == false)
-                    {
-                        //when the server start running fetch from one server the log
-                        //so i can sync my tuple space
-                        server.Log = remoteServer.fetchLog();
-                        Console.WriteLine(server.Log);
-                        //execute by order operation in that log
-                        server.executeLog();
-
-                        logUpdated = true;
-
-                    }
-                    
-                }
-                catch (System.Net.Sockets.SocketException e)
-                {
-                    Console.WriteLine(" attempt -> Failed reaching " + serverPath);
-                }
-
-            }
-            server.Unfreeze();
+            
+            //server.Unfreeze();
 
             System.Console.WriteLine(args[0].Split('/')[3] + ": DIDA-TUPLE-XL Server Started!");
             System.Console.WriteLine("---------------");

@@ -32,12 +32,12 @@ namespace DIDA_CLIENT
         /// </summary>
         public delegate Tuple RemoteAsyncReadDelegate(Tuple t);
 
-        public delegate void RemoteAsyncSecondPhaseDelegate(Tuple t, int workerId, bool writeOnLog=false);
+        public delegate void RemoteAsyncSecondPhaseDelegate(Tuple t, int workerId);
 
         /// <summary>
         /// Delegate for Writes that require workerId, requestId and a tuple.
         /// </summary>
-        public delegate void RemoteAsyncWriteDelegate(int workerId, int requestId, Tuple t, bool writeOnLog = false);
+        public delegate void RemoteAsyncWriteDelegate(int workerId, int requestId, Tuple t);
 
         /// <summary>
         /// Delegate for Takes that require workerId, requestId and a tuple.
@@ -354,7 +354,7 @@ namespace DIDA_CLIENT
                 try
                 {
                     RemoteAsyncSecondPhaseDelegate RemoteDel = new RemoteAsyncSecondPhaseDelegate(server.remove);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, _workerId, true, null, null);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(tuple, _workerId, null, null);
                 }
                 catch (Exception) { }
             }
@@ -434,7 +434,7 @@ namespace DIDA_CLIENT
                 try
                 {
                     RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
-                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, true, null, null);
+                    IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, null, null);
                 }
                 catch (System.Net.Sockets.SocketException) {
                     Console.WriteLine("** FRONTEND WRITE: Could not call write on server");

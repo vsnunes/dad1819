@@ -14,7 +14,6 @@ namespace DIDA_TUPLE_XL
         private int _maxDelay;
         private static bool freeze = false;
         private List<Tuple> _tupleSpace;
-        private Log _log;
 
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
@@ -27,7 +26,6 @@ namespace DIDA_TUPLE_XL
 
         public TupleSpaceXL(String path)
         {
-            _log = new Log();
             _view = new View();
             _tupleSpace = new List<Tuple>();
             _lockList = new LockList();
@@ -69,13 +67,14 @@ namespace DIDA_TUPLE_XL
                     obtainedView = true;
                     break;
                 }
-                catch (System.Net.Sockets.SocketException) {
+                catch (System.Net.Sockets.SocketException)
+                {
                     Console.WriteLine(s + " is not alive");
                 }
             }
 
             //If no one replies to the view then i create my own view
-            if(obtainedView == false)
+            if (obtainedView == false)
             {
                 _view = new View();
                 _view.Add(myPath);
@@ -83,13 +82,12 @@ namespace DIDA_TUPLE_XL
         }
 
 
-        private int generateRandomDelay() {
+        private int generateRandomDelay()
+        {
             if (MinDelay == 0 && MaxDelay == 0)
                 return 0;
             return new Random().Next(MinDelay, MaxDelay);
         }
-
-        public Log Log { get => _log; set => _log = value; }
 
         public int MinDelay { get => _minDelay; set => _minDelay = value; }
         public int MaxDelay { get => _maxDelay; set => _maxDelay = value; }
@@ -99,7 +97,8 @@ namespace DIDA_TUPLE_XL
         public Tuple read(Tuple tuple)
         {
             //Checks if the server is freezed
-            lock(this) {
+            lock (this)
+            {
                 while (freeze)
                     Monitor.Wait(this);
             }
@@ -127,7 +126,7 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void remove(Tuple tuple, int workerId, bool writeOnLog = true)
+        public void remove(Tuple tuple, int workerId)
         {
             if (tuple == null)
             {
@@ -152,19 +151,11 @@ namespace DIDA_TUPLE_XL
                     {
                         _lockList.ReleaseAllLocks(workerId);
                         _tupleSpace.Remove(match);
-                        if (writeOnLog)
-                        {
-                            lock (_log)
-                            {
-                                _log.Add(_log.Counter, Request.OperationType.TAKE, tuple);
-                                _log.Increment();
-                            }
-                        }
                     }
                 }
                 Console.WriteLine("** XL REMOVE: Just removed " + tuple);
             }
-           
+
         }
 
         public int ItemCount()
@@ -219,7 +210,7 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void write(int workerId, int requestId, Tuple tuple, bool writeOnLog=true)
+        public void write(int workerId, int requestId, Tuple tuple)
         {
             //Checks if the server is freezed
             lock (this)
@@ -237,15 +228,6 @@ namespace DIDA_TUPLE_XL
                 Monitor.PulseAll(_tupleSpace);
             }
             Console.WriteLine("** XL WRITE: " + tuple);
-
-            if (writeOnLog)
-            {
-                lock (_log)
-                {
-                    _log.Add(_log.Counter, Request.OperationType.WRITE, tuple);
-                    _log.Increment();
-                }
-            }
         }
 
 
@@ -261,7 +243,8 @@ namespace DIDA_TUPLE_XL
 
         public void Unfreeze()
         {
-            lock(this) {
+            lock (this)
+            {
                 freeze = false;
                 Monitor.PulseAll(this);
             }
@@ -303,10 +286,10 @@ namespace DIDA_TUPLE_XL
         public View AddView(string url)
         {
 
-            if(_view.Servers.Contains(url) == false)
+            if (_view.Servers.Contains(url) == false)
             {
                 Console.WriteLine("** view servers: " + _view.Servers.Count);
-                foreach(string s in _view.Servers)
+                foreach (string s in _view.Servers)
                 {
                     Console.WriteLine("** ADD VIEW: " + s);
                     try
@@ -317,11 +300,13 @@ namespace DIDA_TUPLE_XL
                             otherServer.AddToView(url);
                         }
 
-                    } catch(System.Net.Sockets.SocketException) {
+                    }
+                    catch (System.Net.Sockets.SocketException)
+                    {
                         Console.WriteLine("** ADD VIEW excep: " + s);
                         this.Remove(s);
                     }
-                    
+
                 }
                 Console.WriteLine("** ADD VIEW: myself " + url);
                 AddToView(url);
@@ -341,14 +326,14 @@ namespace DIDA_TUPLE_XL
             this.RemoveFromView(url);
             foreach (string server in _view.Servers)
             {
-                if(server != myPath)
+                if (server != myPath)
                 {
                     TupleSpaceXL serverObj = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), server);
                     serverObj.RemoveFromView(url);
 
                 }
             }
-            
+
             return _view;
         }
 
@@ -366,32 +351,10 @@ namespace DIDA_TUPLE_XL
         {
             return _view;
         }
-       
+
         public void SetView(View view)
         {
             _view = view;
-        }
-
-        public Log fetchLog()
-        {
-            return _log;
-        }
-
-        public void executeLog() {
-            List<Request> _requests = new List<Request>();
-            _requests = _log.Requests;
-            
-            foreach (Request request in _requests)
-            {
-                if (request.OperationId == Request.OperationType.WRITE)
-                {
-                    _tupleSpace.Add(request.Tuple);
-                }
-                else if (request.OperationId == Request.OperationType.TAKE)
-                {
-                    _tupleSpace.Remove(request.Tuple);
-                }
-            }
         }
     }
 }
