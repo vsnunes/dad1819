@@ -32,17 +32,14 @@ namespace DIDA_LIBRARY
 
         public void Add(String str)
         {
+            version++;
             Servers.Add(str);
         }
 
         public void Remove(String str)
         {
+            version++; 
             Servers.Remove(str);
-        }
-
-        public void IncrementVersion()
-        {
-            version++;
         }
 
         public int Count()

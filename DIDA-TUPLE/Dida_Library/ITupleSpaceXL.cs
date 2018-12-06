@@ -20,7 +20,7 @@ namespace DIDA_LIBRARY
         /// <param name="workerId">The client/worker identification.</param>
         /// <param name="requestId">The request identification of this operation.</param>
         /// <param name="tuple">A tupple to be written.</param>
-        void write(int workerId, int requestId, Tuple tuple);
+        void write(int workerId, int requestId, Tuple tuple, View view);
 
         /// <summary>
         /// Reads and takes a tuple from the tuple space.
@@ -29,7 +29,7 @@ namespace DIDA_LIBRARY
         /// <param name="requestId">The request identification of this operation.</param>
         /// <param name="tuple">A tuple to take.</param>
         /// <returns>A list of taples matching the param.</returns>
-        List<Tuple> take(int workerId, int requestId, Tuple tuple);
+        List<Tuple> take(int workerId, int requestId, Tuple tuple, View view);
 
         /// <summary>
         /// Gets the number of itens in the tupple space.
@@ -46,8 +46,6 @@ namespace DIDA_LIBRARY
         View Remove(string url);
 
         View GetActualView();
-
-        void SetView(View view);
 
         void Status();
         

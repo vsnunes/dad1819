@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using DIDA_LIBRARY;
 
 namespace DIDA_TUPLE_XL
 {
@@ -27,8 +22,6 @@ namespace DIDA_TUPLE_XL
                 channel = new TcpChannel(8088);
             }
 
-            bool logUpdated = false;
-
             ChannelServices.RegisterChannel(channel, false);
 
             TupleSpaceXL server = new TupleSpaceXL(args[0]);
@@ -40,13 +33,7 @@ namespace DIDA_TUPLE_XL
                 server.MaxDelay = Int32.Parse(args[2]);
             }
 
-   
-            //if requests received, they are delayed until log recover and master finding complete
-            //server.Freeze();
             RemotingServices.Marshal(server, args[0].Split('/')[3], typeof(TupleSpaceXL));
-
-            
-            //server.Unfreeze();
 
             System.Console.WriteLine(args[0].Split('/')[3] + ": DIDA-TUPLE-XL Server Started!");
             System.Console.WriteLine("---------------");

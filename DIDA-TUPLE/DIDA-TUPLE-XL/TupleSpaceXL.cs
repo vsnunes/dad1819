@@ -24,6 +24,10 @@ namespace DIDA_TUPLE_XL
 
         private string myPath;
 
+        public bool onUpdate = false;
+
+        public static readonly Object onUpdateLock = new Object();
+
         public TupleSpaceXL(String path)
         {
             _view = new View();
@@ -56,6 +60,7 @@ namespace DIDA_TUPLE_XL
                 System.Environment.Exit(1);
             }
 
+            List<List<Tuple>> allTupleSpaces = new List<List<Tuple>>();
             foreach (string s in ServerList)
             {
                 try
@@ -63,15 +68,31 @@ namespace DIDA_TUPLE_XL
                     Console.WriteLine("Trying to get view acesss: " + s);
                     TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
                     View currentView = otherServer.AddView(myPath);
-                    SetView(currentView);
+                    allTupleSpaces.Add(otherServer.GetTupleSpace());
+                    if(_view.Version < currentView.Version)
+                        _view = currentView;
+
                     obtainedView = true;
-                    break;
+
                 }
                 catch (System.Net.Sockets.SocketException)
                 {
                     Console.WriteLine(s + " is not alive");
                 }
             }
+
+            _tupleSpace = Intersection(allTupleSpaces).ToList();
+            
+            foreach(string s in _view.Servers)
+            {
+                if(s != myPath)
+                {
+                    TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
+                    otherServer.SetTupleSpace(_tupleSpace);
+                    otherServer.SetOnUpdate(false);
+                }
+            }
+            this.SetOnUpdate(false);
 
             //If no one replies to the view then i create my own view
             if (obtainedView == false)
@@ -81,6 +102,24 @@ namespace DIDA_TUPLE_XL
             }
         }
 
+        public void SetOnUpdate(bool v)
+        {
+            lock (onUpdateLock)
+            {
+                onUpdate = v;
+
+                if (onUpdate == true)
+                {
+                    Monitor.PulseAll(onUpdateLock);
+                }
+            }
+
+        }
+
+        public void SetTupleSpace(List<Tuple> tupleSpace)
+        {
+            _tupleSpace = tupleSpace;
+        }
 
         private int generateRandomDelay()
         {
@@ -168,13 +207,25 @@ namespace DIDA_TUPLE_XL
         /// </summary>
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
-        public List<Tuple> take(int workerId, int requestId, Tuple tuple)
+        public List<Tuple> take(int workerId, int requestId, Tuple tuple, View view)
         {
             //Checks if the server is freezed
             lock (this)
             {
                 while (freeze)
                     Monitor.Wait(this);
+            }
+
+            if (_view.Version > view.Version)
+            {
+                lock (onUpdateLock)
+                {
+                    while (onUpdate == true)
+                    {
+                        Monitor.Wait(onUpdateLock);
+                    }
+                }
+                throw new ViewChangeException();
             }
 
             Thread.Sleep(generateRandomDelay());
@@ -210,13 +261,25 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void write(int workerId, int requestId, Tuple tuple)
+        public void write(int workerId, int requestId, Tuple tuple, View view)
         {
             //Checks if the server is freezed
             lock (this)
             {
                 while (freeze)
                     Monitor.Wait(this);
+            }
+
+            if (_view.Version > view.Version)
+            {
+                lock (onUpdateLock)
+                {
+                    while (onUpdate == true)
+                    {
+                        Monitor.Wait(onUpdateLock);
+                    }
+                }
+                throw new ViewChangeException();
             }
 
             Thread.Sleep(generateRandomDelay());
@@ -285,40 +348,10 @@ namespace DIDA_TUPLE_XL
 
         public View AddView(string url)
         {
-
-            if (_view.Servers.Contains(url) == false)
-            {
-                Console.WriteLine("** view servers: " + _view.Servers.Count);
-                foreach (string s in _view.Servers)
-                {
-                    Console.WriteLine("** ADD VIEW: " + s);
-                    try
-                    {
-                        if (s != myPath)
-                        {
-                            TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
-                            otherServer.AddToView(url);
-                        }
-
-                    }
-                    catch (System.Net.Sockets.SocketException)
-                    {
-                        Console.WriteLine("** ADD VIEW excep: " + s);
-                        this.Remove(s);
-                    }
-
-                }
-                Console.WriteLine("** ADD VIEW: myself " + url);
-                AddToView(url);
-            }
-
-            return _view;
-        }
-
-        public void AddToView(string url)
-        {
             _view.Add(url);
-            _view.IncrementVersion();
+            onUpdate = true;
+            return _view;
+
         }
 
         public View Remove(string url)
@@ -342,9 +375,13 @@ namespace DIDA_TUPLE_XL
             if (_view.Servers.Contains(url))
             {
                 _view.Remove(url);
-                _view.IncrementVersion();
             }
             return _view;
+        }
+
+        public List<Tuple> GetTupleSpace()
+        {
+            return _tupleSpace;
         }
 
         public View GetActualView()
@@ -352,9 +389,39 @@ namespace DIDA_TUPLE_XL
             return _view;
         }
 
-        public void SetView(View view)
+        public IEnumerable<Tuple> Intersection(List<List<Tuple>> list)
         {
-            _view = view;
+            //Intersection of an empty list
+            if (list.Count == 0)
+                return new List<Tuple>();
+            else if (list.Count == 1)
+                return list[0];
+
+            IEnumerable<Tuple> intersectSet = list.ElementAt(0);
+
+            for (int i = 1; i < list.Count(); i++)
+            {
+                intersectSet = list.ElementAt(i).Intersect(intersectSet, new TupleComparator());
+            }
+
+
+            return intersectSet;
+        }
+    }
+
+    /// <summary>
+    /// Tuple Comparator Class for Intersect method of IEnumerable objects
+    /// </summary>
+    class TupleComparator : IEqualityComparer<Tuple>
+    {
+        public bool Equals(Tuple x, Tuple y)
+        {
+            return x.Equals(y);
+        }
+
+        public int GetHashCode(Tuple obj)
+        {
+            return obj.GetHashCode();
         }
     }
 }
