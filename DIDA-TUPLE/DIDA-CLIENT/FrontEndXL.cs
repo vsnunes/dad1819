@@ -432,13 +432,14 @@ namespace DIDA_CLIENT
             while (ViewOutOfDate)
             {
                 _responseWrite = new List<bool>();
-
                 View actualView = this.GetView();
                 numServers = actualView.Count();
 
-                writeHandles = new AutoResetEvent[actualView.Count()];
+                writeHandles = new AutoResetEvent[numServers];
 
-                for (int i = 0; i < actualView.Count(); i++)
+                Console.WriteLine(actualView);
+
+                for (int i = 0; i < numServers; i++)
                 {
                     writeHandles[i] = new AutoResetEvent(false);
                 }
@@ -467,12 +468,25 @@ namespace DIDA_CLIENT
                     
                 }
 
-                bool wait = WaitHandle.WaitAll(writeHandles, 2000);
+                WaitHandle.WaitAll(writeHandles, 2000);
 
-                if (wait == false || _responseWrite.Contains(false) == true)
+                if (_responseWrite.Count != _view.Servers.Count)
                 {
-                    Console.WriteLine("** FRONTEND WRITE: View is out of date. Needs to be updated now.");
-                    
+                    writeCounter = 0;
+                    foreach (string s in _view.Servers)
+                    {
+                        try
+                        {
+                            ITupleSpaceXL tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), s);
+                            tupleSpace.checkView();
+                            
+                        }
+                        catch (Exception) { Console.WriteLine("Server " + s + " is dead."); }
+                    }
+                    if(_responseWrite.Count > 0)
+                    {
+                        ViewOutOfDate = false;
+                    }
                 }
                 else
                 {
@@ -480,8 +494,8 @@ namespace DIDA_CLIENT
                 }
 
                 _requestId++;
-                Console.WriteLine("** FRONTEND WRITE: Just write " + tuple + " a = " + a);
             }
+            Console.WriteLine("** FRONTEND WRITE: Just wrote " + tuple + " a = " + a);
         }
     }
 
