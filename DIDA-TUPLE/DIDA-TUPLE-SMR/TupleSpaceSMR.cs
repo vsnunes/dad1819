@@ -10,6 +10,9 @@ namespace DIDA_TUPLE_SMR
 {
     public class TupleSpaceSMR : MarshalByRefObject, ITupleSpace, ITotalOrder
     {
+        private int _minDelay = 0;
+        private int _maxDelay = 0;
+
         //Possibilidade de hashtable
         private List<Tuple> _tupleSpace;
 
@@ -67,6 +70,8 @@ namespace DIDA_TUPLE_SMR
         public string MasterPath {set => _masterPath = value; }
         public Log Log { get => _log; set => _log = value; }
         public int ServerId { get => _serverId; set => _serverId = value; }
+        public int MinDelay { get => _minDelay; set => _minDelay = value; }
+        public int MaxDelay { get => _maxDelay; set => _maxDelay = value; }
 
         public TupleSpaceSMR()
         {
@@ -77,6 +82,7 @@ namespace DIDA_TUPLE_SMR
             _backup = "";
             _myPath = "";
             _servers = new List<string>();
+           
             //_view = View.Instance;
             //_view.Add(MyPath);
         }
@@ -97,7 +103,7 @@ namespace DIDA_TUPLE_SMR
                 while (softFreeze)
                     Monitor.Wait(SoftLock);
             }
-
+            Thread.Sleep(generateRandomDelay());
             if (_type != Type.MASTER)
             {
                 return null;
@@ -178,6 +184,7 @@ namespace DIDA_TUPLE_SMR
                 while (softFreeze)
                     Monitor.Wait(SoftLock);
             }
+            Thread.Sleep(generateRandomDelay());
 
             if (_type != Type.MASTER)
             {
@@ -185,7 +192,6 @@ namespace DIDA_TUPLE_SMR
             }
             else
             {
-               
                 //When all servers are ready perfome the commit and
                 //everyone will execute the prepared instruction at the same order.
                 foreach (string path in _servers)
@@ -193,6 +199,7 @@ namespace DIDA_TUPLE_SMR
                     try
                     {
                         TupleSpaceSMR replic = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), path);
+                        Console.WriteLine("** TAKE: Im about to commit to server at " + path);
                         replic.commit(_log.Counter, Request.OperationType.TAKE, tuple);
                         Console.WriteLine("** TAKE: Successfuly commited server at " + path);
                     }
@@ -256,13 +263,14 @@ namespace DIDA_TUPLE_SMR
                     Monitor.Wait(SoftLock);
             }
 
+            Thread.Sleep(generateRandomDelay());
+
             if (_type != Type.MASTER)
             {
                 return;
             }
             else
             {
-                
                 //When all servers are ready perfome the commit and
                 //everyone will execute the prepared instruction at the same order.
                 foreach (string path in _servers)
@@ -309,8 +317,8 @@ namespace DIDA_TUPLE_SMR
         /// <returns></returns>
         public void commit(int id, Request.OperationType request, Tuple tuple)
         {
-
-                switch (request)
+            Thread.Sleep(generateRandomDelay());
+            switch (request)
                 {
                     case Request.OperationType.WRITE:
 
@@ -380,6 +388,7 @@ namespace DIDA_TUPLE_SMR
                 try
                 {
                     //is the master alive?
+                    Thread.Sleep(generateRandomDelay());
                     _replic.imAlive();
                     Console.WriteLine("My master is alive! Let me wait " + timeout / 1000 + " seconds");
                 }
@@ -394,6 +403,7 @@ namespace DIDA_TUPLE_SMR
 
             //Asks all servers for replying its IDs
             foreach (string serverPath in _servers) {
+                Thread.Sleep(generateRandomDelay());
                 TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
                 try
                 {
@@ -421,6 +431,7 @@ namespace DIDA_TUPLE_SMR
                         {
                             try
                             {
+                                Thread.Sleep(generateRandomDelay());
                                 TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
                                 //Freeze all servers before setting i am the master to ensure no one is take my lidership
                                 //10 is the timeout, if i failed all replicas wait at least 10 seconds before unfreeze
@@ -439,6 +450,7 @@ namespace DIDA_TUPLE_SMR
                         {
                             try
                             {
+                                Thread.Sleep(generateRandomDelay());
                                 TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
                                 //Unfreeze all servers
                                 server.Unfreeze(10);
@@ -456,6 +468,7 @@ namespace DIDA_TUPLE_SMR
                     {
                         try
                         {
+                            Thread.Sleep(generateRandomDelay());
                             TupleSpaceSMR server = (TupleSpaceSMR)Activator.GetObject(typeof(TupleSpaceSMR), serverPath);
                             //I'm the master so inform others
                             server.setNewMaster(_myPath);
@@ -572,6 +585,13 @@ namespace DIDA_TUPLE_SMR
             {
                 Console.WriteLine(server);
             }
+        }
+
+        private int generateRandomDelay()
+        {
+            if (MinDelay == 0 && MaxDelay == 0)
+                return 0;
+            return new Random().Next(MinDelay, MaxDelay);
         }
     }
 }
