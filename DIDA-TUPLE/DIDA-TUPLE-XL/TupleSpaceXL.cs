@@ -329,22 +329,22 @@ namespace DIDA_TUPLE_XL
 
         public void checkView()
         {
-            List<string> notalive = new List<string>();
             List<string> servers = _view.Servers.ToList();
             foreach (string i in servers)
             {
-                try
+                if(i!= myPath)
                 {
-                    TupleSpaceXL server = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), i);
-                    server.ItemCount();
-                    Console.WriteLine(i);
+                    try
+                    {
+                        TupleSpaceXL server = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), i);
+                        server.ItemCount();
+                        Console.WriteLine(i);
+                    }
+                    catch (Exception)
+                    {
+                        Remove(i);
+                    }
                 }
-                catch (Exception)
-                {
-                    notalive.Add(i);
-                    Remove(i);
-                }
-
             }
         }
 
