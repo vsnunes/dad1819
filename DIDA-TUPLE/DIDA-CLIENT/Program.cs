@@ -103,7 +103,6 @@ namespace DIDA_CLIENT
                 break;
             }
         }
-
         /// <summary>
         /// Execute an operation based on a parsed instruction.
         /// </summary>
@@ -125,7 +124,6 @@ namespace DIDA_CLIENT
                     break;
                 case "add":
                     tuple = checkTupleSyntax(parser, input);
-
                     frontEnd.Write(tuple);
                     _counter++;
                     break;
@@ -183,9 +181,10 @@ namespace DIDA_CLIENT
 
 
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
                         Console.WriteLine("### ERROR: Invalid begin-repeat arg");
+                        Console.WriteLine(e.StackTrace);
                     }
 
                     break;

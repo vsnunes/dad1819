@@ -82,14 +82,22 @@ namespace DIDA_TUPLE_XL
             }
 
             _tupleSpace = Intersection(allTupleSpaces).ToList();
-            
-            foreach(string s in _view.Servers)
+            List<string> serversCopy = _view.Servers.ToList();
+
+            foreach(string s in serversCopy)
             {
                 if(s != myPath)
                 {
-                    TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
-                    otherServer.SetTupleSpace(_tupleSpace);
-                    otherServer.SetOnUpdate(false);
+                    try
+                    {
+                        TupleSpaceXL otherServer = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), s);
+                        otherServer.SetTupleSpace(_tupleSpace);
+                        otherServer.SetOnUpdate(false);
+                    } catch (System.Net.Sockets.SocketException)
+                    {
+                        Console.WriteLine("** SETTING TS: Server at: " + s + " is dead but is in my view!");
+                        _view.Remove(s);
+                    }
                 }
             }
             this.SetOnUpdate(false);
@@ -261,7 +269,7 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
-        public void write(int workerId, int requestId, Tuple tuple, View view)
+        public bool write(int workerId, int requestId, Tuple tuple, View view)
         {
             //Checks if the server is freezed
             lock (this)
@@ -279,7 +287,7 @@ namespace DIDA_TUPLE_XL
                         Monitor.Wait(onUpdateLock);
                     }
                 }
-                throw new ViewChangeException();
+                return false;
             }
 
             Thread.Sleep(generateRandomDelay());
@@ -291,6 +299,7 @@ namespace DIDA_TUPLE_XL
                 Monitor.PulseAll(_tupleSpace);
             }
             Console.WriteLine("** XL WRITE: " + tuple);
+            return true;
         }
 
 
@@ -316,6 +325,27 @@ namespace DIDA_TUPLE_XL
         public void Crash()
         {
             System.Environment.Exit(0);
+        }
+
+        public void checkView()
+        {
+            List<string> notalive = new List<string>();
+            List<string> servers = _view.Servers.ToList();
+            foreach (string i in servers)
+            {
+                try
+                {
+                    TupleSpaceXL server = (TupleSpaceXL)Activator.GetObject(typeof(TupleSpaceXL), i);
+                    server.ItemCount();
+                    Console.WriteLine(i);
+                }
+                catch (Exception)
+                {
+                    notalive.Add(i);
+                    Remove(i);
+                }
+
+            }
         }
 
         public void Status()
@@ -392,20 +422,38 @@ namespace DIDA_TUPLE_XL
 
         public IEnumerable<Tuple> Intersection(List<List<Tuple>> list)
         {
-            //Intersection of an empty list
             if (list.Count == 0)
                 return new List<Tuple>();
             else if (list.Count == 1)
-                return list[0];
+                return list.ElementAt(0);
 
-            IEnumerable<Tuple> intersectSet = list.ElementAt(0);
+            List<Tuple> firstList = list.ElementAt(0);
+            List<Tuple> intersectSet = new List<Tuple>();
+            bool notIn;
 
-            for (int i = 1; i < list.Count(); i++)
+            foreach (Tuple tuple in firstList)
             {
-                intersectSet = list.ElementAt(i).Intersect(intersectSet, new TupleComparator());
+                notIn = false;
+
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (list.ElementAt(i).Contains(tuple) == false)
+                    {
+                        notIn = true;
+                        break;
+                    }
+                }
+                if (notIn == false)
+                {
+                    intersectSet.Add(tuple);
+
+                    for (int i = 1; i < list.Count; i++)
+                    {
+                        list.ElementAt(i).Remove(tuple);
+                    }
+                }
             }
-
-
+                       
             return intersectSet;
         }
     }

@@ -20,7 +20,7 @@ namespace DIDA_LIBRARY
         /// <param name="workerId">The client/worker identification.</param>
         /// <param name="requestId">The request identification of this operation.</param>
         /// <param name="tuple">A tupple to be written.</param>
-        void write(int workerId, int requestId, Tuple tuple, View view);
+        bool write(int workerId, int requestId, Tuple tuple, View view);
 
         /// <summary>
         /// Reads and takes a tuple from the tuple space.
@@ -54,6 +54,8 @@ namespace DIDA_LIBRARY
         void Unfreeze();
 
         void Crash();
+
+        void checkView();
 
     }
 }

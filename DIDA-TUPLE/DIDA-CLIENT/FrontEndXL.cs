@@ -16,6 +16,8 @@ namespace DIDA_CLIENT
 
         private static Object TakeLock = new Object();
 
+        private static Object WriteLock = new Object();
+
         private View _view = null;
 
         private int _workerId;
@@ -25,7 +27,13 @@ namespace DIDA_CLIENT
 
         private static AutoResetEvent[] takeHandles;
 
-        private static Int32 takeCounter = 0;
+        private static AutoResetEvent[] writeHandles;
+
+        private static int takeCounter = 0;
+
+        private static List<bool> _responseWrite;
+
+        private static int writeCounter = 0;
 
         /// <summary>
         /// Delegate for Reading Operations
@@ -37,7 +45,7 @@ namespace DIDA_CLIENT
         /// <summary>
         /// Delegate for Writes that require workerId, requestId and a tuple.
         /// </summary>
-        public delegate void RemoteAsyncWriteDelegate(int workerId, int requestId, Tuple t, View view);
+        public delegate bool RemoteAsyncWriteDelegate(int workerId, int requestId, Tuple t, View view);
 
         /// <summary>
         /// Delegate for Takes that require workerId, requestId and a tuple.
@@ -160,6 +168,19 @@ namespace DIDA_CLIENT
                 takeHandles[takeCounter++].Set();
                 if (takeCounter == numServers)
                     takeCounter = 0;
+            }
+
+        }
+
+        public static void CallbackWrite(IAsyncResult ar)
+        {
+            RemoteAsyncWriteDelegate del = (RemoteAsyncWriteDelegate)((AsyncResult)ar).AsyncDelegate;
+            lock (WriteLock)
+            {
+                _responseWrite.Add(del.EndInvoke(ar));
+                writeHandles[writeCounter++].Set();
+                if (writeCounter == numServers)
+                    writeCounter = 0;
             }
 
         }
@@ -402,74 +423,65 @@ namespace DIDA_CLIENT
             return intersectSet;
         }
 
+        public static int a = 0;
+
         public void Write(Tuple tuple)
         {
-            View actualView = this.GetView();
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
-
-            List<string> toRemove = new List<string>();
-
-            ITupleSpaceXL tupleSpace = null;
-            //save remoting objects of all members of the view
-            foreach (string serverPath in actualView.Servers)
+            bool ViewOutOfDate = true;
+            
+            while (ViewOutOfDate)
             {
-                try
-                {
-                    tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                    tupleSpace.ItemCount(); //just to check availability of the server
-                }
-                catch (System.Net.Sockets.SocketException)
-                {
-                    tupleSpace = null;
-                    Console.WriteLine("** FRONTEND WRITE: Could not connected to server at " + serverPath);
-                    toRemove.Add(serverPath);
-                }
-                if (tupleSpace != null)
-                    serversObj.Add(tupleSpace);
-            }
+                _responseWrite = new List<bool>();
 
-            if (serversObj.Count > 0)
-            {
+                View actualView = this.GetView();
+                numServers = actualView.Count();
 
-                foreach (string crashed in toRemove)
+                writeHandles = new AutoResetEvent[actualView.Count()];
+
+                for (int i = 0; i < actualView.Count(); i++)
                 {
-                   _view = serversObj[0].Remove(crashed);
+                    writeHandles[i] = new AutoResetEvent(false);
                 }
+
+                //List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+
+                List<string> toRemove = new List<string>();
                 
-            }
-            else {
-                Console.WriteLine("All servers are dead! Exiting...");
-                Environment.Exit(1);
-            }
-
-            bool ViewOutOfDate;
-
-            foreach (ITupleSpaceXL server in serversObj)
-            {
-                ViewOutOfDate = true;
-
-                while (ViewOutOfDate)
+               
+                foreach (string serverPath in actualView.Servers)
                 {
+                    
                     try
                     {
+                        ITupleSpaceXL server = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
+                        
                         RemoteAsyncWriteDelegate RemoteDel = new RemoteAsyncWriteDelegate(server.write);
-                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, null, null);
-                        ViewOutOfDate = false;
+                        a++;
+                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackWrite);
+                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, CallbackWrite, null);
                     }
                     catch (System.Net.Sockets.SocketException)
                     {
                         Console.WriteLine("** FRONTEND WRITE: Could not call write on server");
                     }
-                    catch (ViewChangeException)
-                    {
-                        Console.WriteLine("** FRONTEND WRITE: View is out of date during write. It will be updated.");
-                        //Request the new view
-                        this.GetView();
-                    }
+                    
                 }
+
+                bool wait = WaitHandle.WaitAll(writeHandles, 2000);
+
+                if (wait == false || _responseWrite.Contains(false) == true)
+                {
+                    Console.WriteLine("** FRONTEND WRITE: View is out of date. Needs to be updated now.");
+                    
+                }
+                else
+                {
+                    ViewOutOfDate = false;
+                }
+
+                _requestId++;
+                Console.WriteLine("** FRONTEND WRITE: Just write " + tuple + " a = " + a);
             }
-            _requestId++;
-            Console.WriteLine("** FRONTEND WRITE: Just write " + tuple);
         }
     }
 
