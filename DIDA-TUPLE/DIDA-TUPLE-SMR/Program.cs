@@ -35,6 +35,14 @@ namespace DIDA_TUPLE_SMR
             ChannelServices.RegisterChannel(channel, false);
 
             TupleSpaceSMR server = new TupleSpaceSMR();
+
+            //Set min delay and max delay
+            if (args.Length == 4)
+            {
+                server.MinDelay = Int32.Parse(args[2]);
+                server.MaxDelay = Int32.Parse(args[3]);
+            }
+
             server.MyPath = args[0];
             server.ServerId = id;
 
