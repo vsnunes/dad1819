@@ -318,7 +318,16 @@ namespace DIDA_CLIENT
                 }
                 else
                 {
-                    ViewOutOfDate = false;
+
+                    if (_responseTake.Contains(null) == true)
+                    {
+                        Console.WriteLine("** FRONTEND TAKE: View has been changed.");
+                        _requestId++;
+                    }
+                    else
+                    {
+                        ViewOutOfDate = false;
+                    }
                 }
                 
             }
@@ -390,15 +399,14 @@ namespace DIDA_CLIENT
             else if (list.Count == 1)
                 return list[0];
 
-            IEnumerable<Tuple> intersectSet = list.ElementAt(0);
+            IEnumerable<Tuple> intersectSet = list.ElementAt(0).ToList();
 
             for (int i = 1; i < list.Count(); i++)
             {
                 intersectSet = list.ElementAt(i).Intersect(intersectSet, new TupleComparator());
             }
-
-
             return intersectSet;
+
         }
 
         public static int a = 0;
