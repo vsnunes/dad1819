@@ -433,13 +433,14 @@ namespace DIDA_CLIENT
             {
                 _responseWrite = new List<bool>();
                 View actualView = this.GetView();
-                numServers = actualView.Count();
+                int numberServers = actualView.Count();
+                numServers = numberServers;
 
-                writeHandles = new AutoResetEvent[numServers];
+                writeHandles = new AutoResetEvent[numberServers];
 
                 Console.WriteLine(actualView);
 
-                for (int i = 0; i < numServers; i++)
+                for (int i = 0; i < numberServers; i++)
                 {
                     writeHandles[i] = new AutoResetEvent(false);
                 }
