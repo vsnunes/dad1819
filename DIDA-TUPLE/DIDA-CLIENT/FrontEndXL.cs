@@ -254,102 +254,80 @@ namespace DIDA_CLIENT
 
         public Tuple Take(Tuple tuple)
         {
-            View actualView = this.GetView();
-            int numberServers = actualView.Servers.Count;
-            numServers = numberServers;
-            takeHandles = new AutoResetEvent[numberServers];
+            bool ViewOutOfDate = true;
 
-            for (int i = 0; i < actualView.Servers.Count; i++)
+            while (ViewOutOfDate)
             {
-                takeHandles[i] = new AutoResetEvent(false);
-            }
+                View actualView = this.GetView();
+                int numberServers = actualView.Servers.Count;
+                numServers = numberServers;
+                takeHandles = new AutoResetEvent[numberServers];
 
-            Console.WriteLine("Vou tentar take: " + tuple);
-            List<ITupleSpaceXL> serversObj = new List<ITupleSpaceXL>();
+                for (int i = 0; i < actualView.Servers.Count; i++)
+                {
+                    takeHandles[i] = new AutoResetEvent(false);
+                }
 
-            List<string> toRemove = new List<string>();
+                Console.WriteLine("Vou tentar take: " + tuple);
 
-            ITupleSpaceXL tupleSpace = null;
-            //save remoting objects of all members of the view
-            Tuple tup = null;
-            
-            while (tup == null)
-            {
+                List<string> toRemove = new List<string>();
+
                 _responseTake = new List<List<Tuple>>();
+
                 foreach (string serverPath in actualView.Servers)
                 {
+
                     try
                     {
-                        tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
-                        tupleSpace.ItemCount(); //just to check availability of the server
-                    }
-                    catch (System.Net.Sockets.SocketException) {
-                        tupleSpace = null;
-                        toRemove.Add(serverPath);
-                    }
-                    if (tupleSpace != null)
-                        serversObj.Add(tupleSpace);
-                }
+                        ITupleSpaceXL server = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), serverPath);
 
-                if (serversObj.Count > 0)
-                {
-                    foreach (string crashed in toRemove)
+                        RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
+                        AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
+                        IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, CallbackTake, null);
+                        ViewOutOfDate = false;
+                    }
+                    catch (System.Net.Sockets.SocketException)
                     {
-                        //only one can crash so serverObj is obviously online
-                        _view = serversObj[0].Remove(crashed);
+                        Console.WriteLine("** FRONTEND TAKE: Could not call take on server " + serverPath);
                     }
-                }
-                else
-                {
-                    Console.WriteLine("All servers are dead! Exiting...");
-                    Environment.Exit(1);
-                }
 
-                bool ViewOutOfDate;
-
-                foreach (ITupleSpaceXL server in serversObj)
-                {
-                    ViewOutOfDate = true;
-                    while (ViewOutOfDate)
-                    {
-                        try
-                        {
-                            RemoteAsyncTakeDelegate RemoteDel = new RemoteAsyncTakeDelegate(server.take);
-                            AsyncCallback RemoteCallback = new AsyncCallback(CallbackTake);
-                            IAsyncResult RemAr = RemoteDel.BeginInvoke(_workerId, _requestId, tuple, _view, CallbackTake, null);
-                            ViewOutOfDate = false;
-                        }
-                        catch (System.Net.Sockets.SocketException)
-                        {
-                            lock (TakeLock)
-                            {
-                                takeHandles[takeCounter++].Set();
-                                if (takeCounter == numServers)
-                                    takeCounter = 0;
-                            }
-                        }
-                        catch (ViewChangeException)
-                        {
-                            Console.WriteLine("** FRONTEND TAKE-PH1: View is out of date during take phase 1. It will be updated.");
-                            //Request the new view
-                            this.GetView();
-                        }
-                    }
                 }
 
                 //miguel: this only works in perfect case
                 //TODO: One machine belonging to the view has just crashed
 
-                WaitHandle.WaitAll(takeHandles);
+                WaitHandle.WaitAll(takeHandles, 10000);
 
-
-                //Performs the intersection of all responses and decide using TupleSelection
-                tup = TupleSelection(Intersection(_responseTake));
-                if(tup == null)
+                if (_responseTake.Count != _view.Servers.Count)
                 {
-                    Remove(null);
-                }
+                    takeCounter = 0;
+                    foreach (string s in _view.Servers)
+                    {
+                        try
+                        {
+                            ITupleSpaceXL tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), s);
+                            tupleSpace.checkView();
 
+                        }
+                        catch (Exception) { Console.WriteLine("Server " + s + " is dead."); }
+                    }
+                    if (_responseTake.Count > 0)
+                    {
+                        ViewOutOfDate = false;
+                    }
+                }
+                else
+                {
+                    ViewOutOfDate = false;
+                }
+                
+            }
+
+            //Performs the intersection of all responses and decide using TupleSelection
+            Tuple tup = TupleSelection(Intersection(_responseTake));
+            if (tup == null)
+            {
+                Remove(null);
             }
 
             //Tuple tup is now selected lets remove
