@@ -233,7 +233,7 @@ namespace DIDA_TUPLE_XL
                         Monitor.Wait(onUpdateLock);
                     }
                 }
-                throw new ViewChangeException();
+                return null;
             }
 
             Thread.Sleep(generateRandomDelay());
