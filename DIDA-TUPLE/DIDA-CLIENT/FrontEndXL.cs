@@ -449,6 +449,9 @@ namespace DIDA_CLIENT
 
                 WaitHandle.WaitAll(writeHandles, 2000);
 
+                //When some server joins the view while the operation is taking place
+                
+                //Because some machine on my view crashed while the operation was taking place
                 if (_responseWrite.Count != _view.Servers.Count)
                 {
                     writeCounter = 0;
@@ -458,20 +461,26 @@ namespace DIDA_CLIENT
                         {
                             ITupleSpaceXL tupleSpace = (ITupleSpaceXL)Activator.GetObject(typeof(ITupleSpaceXL), s);
                             tupleSpace.checkView();
-                            
+
                         }
                         catch (Exception) { Console.WriteLine("Server " + s + " is dead."); }
                     }
-                    if(_responseWrite.Count > 0)
+                    if (_responseWrite.Count > 0)
                     {
                         ViewOutOfDate = false;
                     }
                 }
                 else
                 {
-                    ViewOutOfDate = false;
+                    if (_responseWrite.Contains(false) == true)
+                    {
+                        Console.WriteLine("** FRONTEND WRITE: View has been changed");
+                    }
+                    else
+                    {
+                        ViewOutOfDate = false;
+                    }
                 }
-
                 _requestId++;
             }
             Console.WriteLine("** FRONTEND WRITE: Just wrote " + tuple + " a = " + a);

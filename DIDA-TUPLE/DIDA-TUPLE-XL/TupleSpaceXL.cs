@@ -116,7 +116,7 @@ namespace DIDA_TUPLE_XL
             {
                 onUpdate = v;
 
-                if (onUpdate == true)
+                if (onUpdate == false)
                 {
                     Monitor.PulseAll(onUpdateLock);
                 }
@@ -278,6 +278,8 @@ namespace DIDA_TUPLE_XL
                     Monitor.Wait(this);
             }
 
+            Console.WriteLine("MINHA VIEW NO WRITE: " + _view);
+
             if (_view.Version > view.Version)
             {
                 lock (onUpdateLock)
@@ -290,6 +292,7 @@ namespace DIDA_TUPLE_XL
                 return false;
             }
 
+            
             Thread.Sleep(generateRandomDelay());
             //If any thread is waiting for read or take
             //notify them to check if this tuple match its requirements
@@ -340,7 +343,7 @@ namespace DIDA_TUPLE_XL
                         server.ItemCount();
                         Console.WriteLine(i);
                     }
-                    catch (Exception)
+                    catch (System.Net.Sockets.SocketException)
                     {
                         Remove(i);
                     }
@@ -417,6 +420,13 @@ namespace DIDA_TUPLE_XL
 
         public View GetActualView()
         {
+            lock (onUpdateLock)
+            {
+                while (onUpdate)
+                {
+                    Monitor.Wait(onUpdateLock);
+                }
+            }
             return _view;
         }
 
