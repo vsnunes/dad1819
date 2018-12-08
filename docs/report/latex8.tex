@@ -23,31 +23,30 @@
 \title{\LaTeX\ Author Guidelines 
        for {\boldmath $8.5 \times 11$-Inch} Proceedings Manuscripts}
 
-\author{Paolo Ienne\\
-Swiss Federal Institute of Technology\\ Microcomputing Laboratory \\ IN-F 
-Ecublens, 1015 Lausanne, Switzerland\\ Paolo.Ienne@di.epfl.ch\\
+\author{Miguel Belém\\
+83531\\
 % For a paper whose authors are all at the same institution, 
 % omit the following lines up until the closing ``}''.
 % Additional authors and addresses can be added with ``\and'', 
 % just like the second author.
 \and
-Second Author\\
-Institution2\\
-First line of institution2 address\\ Second line of institution2 address\\ 
-SecondAuthor@institution2.com\\
+Tiago Gonçalves\\
+83567\\
+\and
+Vítor Nunes\\
+83576\\
 }
 
 \maketitle
 \thispagestyle{empty}
 
 \begin{abstract}
-   The ABSTRACT is to be in fully-justified italicized text, at the top 
-   of the left-hand column, below the author and affiliation 
-   information. Use the word ``Abstract'' as the title, in 12-point 
-   Times, boldface type, centered relative to the column, initially 
-   capitalized. The abstract is to be in 10-point, single-spaced type. 
-   The abstract may be up to 3 inches (7.62 cm) long. Leave two blank 
-   lines after the Abstract, then begin the main text. 
+   In this project we will apply two different aproaches to solve the problem of
+   having a distributed tupplespace. 
+   These aproaches have different tradeoffs considerations regarding time spent 
+   executing a request, network congestion and time spent recovering from a fault.
+   For this work we consider a perfect failure detector, in which if a server stop
+   responding to requests, then is because it crashed.   
 \end{abstract}
 
 
@@ -55,19 +54,120 @@ SecondAuthor@institution2.com\\
 %------------------------------------------------------------------------- 
 \Section{Introduction}
 
-Please follow the steps outlined below when submitting your 
-manuscript to the IEEE Computer Society Press. Note there have 
-been some changes to the measurements from previous instructions. 
+%Please follow the steps outlined below when submitting your 
+%manuscript to the IEEE Computer Society Press. Note there have 
+%been some changes to the measurements from previous instructions.
+A tuple space consists in distributed collection of tuples. A tuple contains
+fields that are some how related.
+A basic tuple space needs to be writable, readable and deletable.
+
+\textbf{Challenges.} At a first glace seems easy to implement a tuple space
+in a distributed way however problems like consistency, data loss and 
+performance rise.
+
+To overcome this challenges we propose two diferent implementations of a 
+distributed tuple space which solve the challenges listed above.
+
+The State Machine Replication (SMR) which uses a coordination mechanism envolving
+one leader to be responsible for coordination.
+
+And a Xu and Liskov implementation that discards the need of a leader to
+coordinate client's requests.
+
 
 %------------------------------------------------------------------------- 
-\Section{Instructions}
+\Section{State Machine Replcation}
 
-Please read the following carefully.
+The State Machine Replication is based on primary backup approach. Given one
+primary and several secondary nodes, clients will perform requests to the
+primary node only.
+
+When the first server is switched on, we start by searching for alive servers
+requesting \textsc{AreYouTheMaster}. If no reply is given then the server
+becomes the leader. When others servers join the process repeats but they
+will receive the reply containing the URL path of the master.
 
 %------------------------------------------------------------------------- 
-\SubSection{Language}
+\SubSection{Clients request}
 
-All manuscripts must be in English.
+In our solution when the client starts we begin with a list of all URL's servers,
+sends the request to all servers and only the leader will start processing, others
+simply discard the request.
+
+%------------------------------------------------------------------------- 
+\SubSection{Fault tolerance}
+This implementation has an obvious \textbf{week point}: if the master crashes 
+the system will stop repling to requests.
+Our solution to this problem consists of using an heartbeat that is sent from the
+secondary nodes to the primary node every random seconds between 3 to 10 seconds.
+This ensures that in the worst case the system will took ten seconds to
+recovers (assuming instant propagation of messages) . 
+The randomization process is used to optimize network bandwith and
+prevent heartbeats flooding on the master.
+
+Every node in the SMR contains an identifier. When a master crashes the remaining
+node with the smallest ID will be elect as the new master. It starts by informing
+all secondary nodes about its leadership change. By that time all secondary nodes
+start sending heartbeets to the new master.
+
+Another problem is when a \textbf{secondary node crashes}. In this case the
+availability of the system is not affected since the primary node continues 
+to receive client's request. Nevertheless if that same node resurrects then it
+will be unconsistent with others. To fix this problem, every node has a log.
+
+A log is used to keep track of every request made by the master 
+\textbf{that was already executed.} When a secondary node crashes and recovers
+it will have no such tuple in the tuple space, then request to the master
+a copy of his own log. The master suspend the client's requests processing and
+replies to the new secondary node. As soon the new node is ready the master
+continues to processing client's request.
+
+
+%------------------------------------------------------------------------- 
+\Section{Xu and Liskov}
+
+De acordo com esta implementação já não se recorre a um master que garante a 
+consistência do sistema coordenando todos os pedidos. Em vez disso,
+cada Front end de cada cliente vai propagar o pedido para todos os servidores vivos,
+e cada um desses servidores vai tratar de o executar.
+
+%------------------------------------------------------------------------- 
+\SubSection{Clients request}
+
+Na nossa solução, quando um cliente quer realizar uma lista de um ou mais pedidos,
+vai inicialmente criar um Front End, que vai procurar quais os servidores vivos,
+e com isso é criada a View do cliente, que tem um ID. 
+Quando um pedido é enviado para os servidores, é anexado ao mesmo o ID da view do cliente,
+o que permite ao servidor saber se o cliente está ou não sincronizado com os servidore,
+caso não esteja, é porque o sistema sofreu uma modificação e quando a mesma é terminada,
+a nova View de servidores vivos é enviada ao cliente.
+
+%------------------------------------------------------------------------- 
+ 
+\SubSection{Fault tolerance}
+
+Esta abordagem ao não apresentar um master, tem a vantagem de que quando um nó crasha,
+seja ele qual for, o sistema não precisa de parar. Isto é possível pois não existe uma
+unidade central da qual todo o sistema dependa, e que caso a mesma crashe, todo o sistema 
+é comprometido.
+Apresenta uma desvantagem em relação ao SMR que é a de precisar de parar o sistema por 
+breves instantes quando um novo nó se liga ao sistema. Isto é feito pois as Views precisam
+de ser atualizadas para passar a conter o novo nó, e não se pode perder pedidos que
+estejam a ser feitos enquanto as Views são atualizadas.
+
+Quando um nó crasha o cliente vai atualizar a sua view, e informar todos os seus membros
+para atualizarem a sua view.
+Quando um nó rescuscita, vai começar por informar todas as máquinas vivas de que precisa
+do seu espaço de tuplos e vai pedir para que atualizem as suas views. Cada máquina ao
+receber este pedido vai recusar pedidos dos clientes que apresentem uma view antiga
+e vai dar o seu tuplespace ao novo nó. 
+O novo nó vai fazer uma interseção de todos os tuplespaces (a interseção garante
+que ele apenas vai guardar os pedidos que já foram executados em todas as máquinas).
+Em seguida esse tuplespace é propagado para todo o sistema, com isto garantimos que 
+nunca se perdem pedidos, pois mesmo que um pedido já tenha sido enviado para uma máquina
+mas não para outra, o mesmo vai ser repetido. Após todos os tuplespaces terem sido
+atualizados, o novo nó sinaliza as outras máquinas para que mandem a sua nova view ao cliente,
+repetindo o mesmo todos os pedidos da mesma operação que foram enviados numa view antiga.
 
 %------------------------------------------------------------------------- 
 \SubSection{Printing your paper}
