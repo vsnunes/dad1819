@@ -138,25 +138,25 @@ Na nossa solução, quando um cliente quer realizar uma lista de um ou mais pedi
 vai inicialmente criar um Front End, que vai procurar quais os servidores vivos,
 e com isso é criada a View do cliente, que tem um ID. 
 Quando um pedido é enviado para os servidores, é anexado ao mesmo o ID da view do cliente,
-o que permite ao servidor saber se o cliente está ou não sincronizado com os servidore,
-caso não esteja, é porque o sistema sofreu uma modificação e quando a mesma é terminada,
-a nova View de servidores vivos é enviada ao cliente.
+o que permite ao servidor saber se a view do cliente está ou não sincronizada com as views
+dos servidores, caso não esteja, é porque o sistema sofreu uma modificação e quando recuperar da mesma,
+a nova é enviada ao cliente.
 
 %------------------------------------------------------------------------- 
  
 \SubSection{Fault tolerance}
 
-Esta abordagem ao não apresentar um master, tem a vantagem de que quando um nó crasha,
+Esta abordagem, ao não apresentar um master, tem a vantagem de que quando um nó crasha,
 seja ele qual for, o sistema não precisa de parar. Isto é possível pois não existe uma
 unidade central da qual todo o sistema dependa, e que caso a mesma crashe, todo o sistema 
 é comprometido.
 Apresenta uma desvantagem em relação ao SMR que é a de precisar de parar o sistema por 
 breves instantes quando um novo nó se liga ao sistema. Isto é feito pois as Views precisam
-de ser atualizadas para passar a conter o novo nó, e não se pode perder pedidos que
+de ser atualizadas para passar a conter o novo nó, e não se podem perder pedidos que
 estejam a ser feitos enquanto as Views são atualizadas.
 
 Quando um nó crasha o cliente vai atualizar a sua view, e informar todos os seus membros
-para atualizarem a sua view.
+para atualizarem a deles.
 Quando um nó rescuscita, vai começar por informar todas as máquinas vivas de que precisa
 do seu espaço de tuplos e vai pedir para que atualizem as suas views. Cada máquina ao
 receber este pedido vai recusar pedidos dos clientes que apresentem uma view antiga
@@ -165,161 +165,68 @@ O novo nó vai fazer uma interseção de todos os tuplespaces (a interseção ga
 que ele apenas vai guardar os pedidos que já foram executados em todas as máquinas).
 Em seguida esse tuplespace é propagado para todo o sistema, com isto garantimos que 
 nunca se perdem pedidos, pois mesmo que um pedido já tenha sido enviado para uma máquina
-mas não para outra, o mesmo vai ser repetido. Após todos os tuplespaces terem sido
+mas não para outra, vai acabar ser repetido. Após todos os tuplespaces terem sido
 atualizados, o novo nó sinaliza as outras máquinas para que mandem a sua nova view ao cliente,
-repetindo o mesmo todos os pedidos da mesma operação que foram enviados numa view antiga.
+repetindo o mesmo todos os pedidos da mesma operação que foram enviados numa view antiga e que
+consequentemente foram recusados pelos servidores.
 
 %------------------------------------------------------------------------- 
-\SubSection{Printing your paper}
+\Section{Evaluation}
+Nesta secção vamos analisar e avaliar como cada algorítmo se comporta no que toca 
+a alguns pontos chaves. Apresentamos ainda a justificação para algumas escolhas que
+tiveram de ser feitas.
+\SubSection{Requests execution}
+\subsubsection{SMR}
 
-Print your properly formatted text on high-quality, $8.5 \times 11$-inch 
-white printer paper. A4 paper is also acceptable, but please leave the 
-extra 0.5 inch (1.27 cm) at the BOTTOM of the page.
+Para a operação de Take e Write é necessário que os pedidos cheguem ao master
+e depois este propaga para o resto dos servidores/réplicas. Isto além de sobrecarregar um servidor pois 
+é ele que tem de receber a transmitir os pedidos e posteriormente esperar pelas respostas 
+dadas pelas réplicas também atrasa a respostas aos pedidos pois é preciso que os mesmo passem
+por um intermediário.
+Na operação de Read os pedidos não são propagados pera as réplicas, devolvendo o master 
+instantâneamente a resposta ao cliente, caso seja possível (Take e Read são operações bloquentas, 
+para ser dada uma resposta é preciso que a mesma conste nos espaços de tuplos).
 
-%------------------------------------------------------------------------- 
-\SubSection{Margins and page numbering}
+\subsubsection{XL}
 
-All printed material, including text, illustrations, and charts, must be 
-kept within a print area 6-7/8 inches (17.5 cm) wide by 8-7/8 inches 
-(22.54 cm) high. Do not write or print anything outside the print area. 
-Number your pages lightly, in pencil, on the upper right-hand corners of 
-the BACKS of the pages (for example, 1/10, 2/10, or 1 of 10, 2 of 10, and 
-so forth). Please do not write on the fronts of the pages, nor on the 
-lower halves of the backs of the pages.
+Para a operação Write o cliente propaga o pedido para todos os servidores. Para a operação de Read
+o cliente propaga o pedido para todos os servidores e devolve ao cliente quando obtiver a primeira
+resposta. Para a operação de Take foram tidos em conta alguns cuidados, nomeadamente: é necessário
+bloquear certas entradas do espaço de tuplos e convem que esta parte seja feita de uma maneira que 
+não obrigue a que o cliente fique muito tempo à espera de uma resposta assim sendo o algorítmo usado
+foi o de tentar bloquear tantas entradas que dêm match com o pedido quanto possível, e quando não for 
+possível adquirir o trinco de uma dada entrada, o conjunto de entradas que cujo trinco foi adquirido
+sao devolvidas ao front end, em seguida o front end vai intersetar os conjuntos que recebeu dos vários
+servidores e vai escolher um elemento comum a todos esses conjuntos e remove-lo, devolvendo ao cliente.
+Esta foi a melhor solução encontrada, pois usamos uma heurística que tenta devolver o máximo de entradas
+possível no entanto não fica muito tempo à espera de modo a conseguir todas a entradas possíveis (se existirem
+muitos pedidos simultâneos e todos fizerem isto, o que vai aconter é o servidor não conseguir dar resposta a ninguém
+e ficar muito lento), esta heurística também não se contenta apenas com uma resposta (caso só fosse devolvida uma entrada,
+na parte da interseção, a probabilidade de a mesma ser nula seria muito elevada). Com esta heurística conseguimos
+ter algum equilíbrio.
 
+\SubSection{Comparison}
 
-%------------------------------------------------------------------------ 
-\SubSection{Formatting your paper}
+Para a operação Write é expectável que o XL a execute mais rapidamente.
+Para a operação de Read é expectável que ambas as implementações tenham um tempo de execução semelhante.
+Para a operação de Take se a máquina master tiver uma capacidade de processamente muito elevada (não entupir com
+um elevado número de pedidos), acabamos por conseguir ter tempos de resposta mais baixos pois não ficamos dependentes
+da operação de interseção, que pode falhar, tendo de ser repetido todo o processo.
 
-All text must be in a two-column format. The total allowable width of 
-the text area is 6-7/8 inches (17.5 cm) wide by 8-7/8 inches (22.54 cm) 
-high. Columns are to be 3-1/4 inches (8.25 cm) wide, with a 5/16 inch 
-(0.8 cm) space between them. The main title (on the first page) should 
-begin 1.0 inch (2.54 cm) from the top edge of the page. The second and 
-following pages should begin 1.0 inch (2.54 cm) from the top edge. On 
-all pages, the bottom margin should be 1-1/8 inches (2.86 cm) from the 
-bottom edge of the page for $8.5 \times 11$-inch paper; for A4 paper, 
-approximately 1-5/8 inches (4.13 cm) from the bottom edge of the page.
+\SubSection{Network congestion}
+\subsubsection{SMR}
+\subsubsection{XL}
+\SubSection{Fault recovering}
+\subsubsection{SMR}
+\subsubsection{XL}
+\Section{Summary and conclusions}
+No algorítmo SMR não são usadas Views, provocando uma latência enorme em todas as comunicações servidor servidor
+e cliente servidor, pois é necessário estar sempre a verificar que máquinas estão vivas. Uma modificação futura a este
+trabalho seria implementar um sistema de Views semelhante ao existente no XL.
+Não é possível dizer qual dos algorítmos é melhor, ambos apresentam vantagens e desvantagens, será necessário ver com atenção
+os tópicos referentes à Evaluation, e conforme o intuíto do sistema a ser desenvolvido, aplicar o que melhor se adeque aos objetivos
+do sistema.
 
-%------------------------------------------------------------------------- 
-\SubSection{Type-style and fonts}
-
-Wherever Times is specified, Times Roman may also be used. If neither is 
-available on your word processor, please use the font closest in 
-appearance to Times that you have access to.
-
-MAIN TITLE. Center the title 1-3/8 inches (3.49 cm) from the top edge of 
-the first page. The title should be in Times 14-point, boldface type. 
-Capitalize the first letter of nouns, pronouns, verbs, adjectives, and 
-adverbs; do not capitalize articles, coordinate conjunctions, or 
-prepositions (unless the title begins with such a word). Leave two blank 
-lines after the title.
-
-AUTHOR NAME(s) and AFFILIATION(s) are to be centered beneath the title 
-and printed in Times 12-point, non-boldface type. This information is to 
-be followed by two blank lines.
-
-The ABSTRACT and MAIN TEXT are to be in a two-column format. 
-
-MAIN TEXT. Type main text in 10-point Times, single-spaced. Do NOT use 
-double-spacing. All paragraphs should be indented 1 pica (approx. 1/6 
-inch or 0.422 cm). Make sure your text is fully justified---that is, 
-flush left and flush right. Please do not place any additional blank 
-lines between paragraphs. Figure and table captions should be 10-point 
-Helvetica boldface type as in
-\begin{figure}[h]
-   \caption{Example of caption.}
-\end{figure}
-
-\noindent Long captions should be set as in 
-\begin{figure}[h] 
-   \caption{Example of long caption requiring more than one line. It is 
-     not typed centered but aligned on both sides and indented with an 
-     additional margin on both sides of 1~pica.}
-\end{figure}
-
-\noindent Callouts should be 9-point Helvetica, non-boldface type. 
-Initially capitalize only the first word of section titles and first-, 
-second-, and third-order headings.
-
-FIRST-ORDER HEADINGS. (For example, {\large \bf 1. Introduction}) 
-should be Times 12-point boldface, initially capitalized, flush left, 
-with one blank line before, and one blank line after.
-
-SECOND-ORDER HEADINGS. (For example, {\elvbf 1.1. Database elements}) 
-should be Times 11-point boldface, initially capitalized, flush left, 
-with one blank line before, and one after. If you require a third-order 
-heading (we discourage it), use 10-point Times, boldface, initially 
-capitalized, flush left, preceded by one blank line, followed by a period 
-and your text on the same line.
-
-%------------------------------------------------------------------------- 
-\SubSection{Footnotes}
-
-Please use footnotes sparingly%
-\footnote
-   {%
-     Or, better still, try to avoid footnotes altogether.  To help your 
-     readers, avoid using footnotes altogether and include necessary 
-     peripheral observations in the text (within parentheses, if you 
-     prefer, as in this sentence).
-   }
-and place them at the bottom of the column on the page on which they are 
-referenced. Use Times 8-point type, single-spaced.
-
-
-%------------------------------------------------------------------------- 
-\SubSection{References}
-
-List and number all bibliographical references in 9-point Times, 
-single-spaced, at the end of your paper. When referenced in the text, 
-enclose the citation number in square brackets, for example~\cite{ex1}. 
-Where appropriate, include the name(s) of editors of referenced books.
-
-%------------------------------------------------------------------------- 
-\SubSection{Illustrations, graphs, and photographs}
-
-All graphics should be centered. Your artwork must be in place in the 
-article (preferably printed as part of the text rather than pasted up). 
-If you are using photographs and are able to have halftones made at a 
-print shop, use a 100- or 110-line screen. If you must use plain photos, 
-they must be pasted onto your manuscript. Use rubber cement to affix the 
-images in place. Black and white, clear, glossy-finish photos are 
-preferable to color. Supply the best quality photographs and 
-illustrations possible. Penciled lines and very fine lines do not 
-reproduce well. Remember, the quality of the book cannot be better than 
-the originals provided. Do NOT use tape on your pages!
-
-%------------------------------------------------------------------------- 
-\SubSection{Color}
-
-The use of color on interior pages (that is, pages other
-than the cover) is prohibitively expensive. We publish interior pages in 
-color only when it is specifically requested and budgeted for by the 
-conference organizers. DO NOT SUBMIT COLOR IMAGES IN YOUR 
-PAPERS UNLESS SPECIFICALLY INSTRUCTED TO DO SO.
-
-%------------------------------------------------------------------------- 
-\SubSection{Symbols}
-
-If your word processor or typewriter cannot produce Greek letters, 
-mathematical symbols, or other graphical elements, please use 
-pressure-sensitive (self-adhesive) rub-on symbols or letters (available 
-in most stationery stores, art stores, or graphics shops).
-
-%------------------------------------------------------------------------ 
-\SubSection{Copyright forms}
-
-You must include your signed IEEE copyright release form when you submit 
-your finished paper. We MUST have this form before your paper can be 
-published in the proceedings.
-
-%------------------------------------------------------------------------- 
-\SubSection{Conclusions}
-
-Please direct any questions to the production editor in charge of these 
-proceedings at the IEEE Computer Society Press: Phone (714) 821-8380, or 
-Fax (714) 761-1784.
 
 %------------------------------------------------------------------------- 
 \nocite{ex1,ex2}
