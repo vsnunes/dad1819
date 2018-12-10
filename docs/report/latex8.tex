@@ -22,8 +22,7 @@
 %------------------------------------------------------------------------- 
 \begin{document}
 
-\title{\LaTeX\ Author Guidelines 
-       for {\boldmath $8.5 \times 11$-Inch} Proceedings Manuscripts}
+\title{DIDA-TUPLE}
 
 \author{Miguel Belém\\
 83531\\
@@ -355,29 +354,57 @@ tuples that are locked to that client during the \textsc{Take} Phase 1.
 
 Every tuple can only be locked to a user at the same time.
 
-% vitor: question
-Esta foi a melhor solução encontrada, pois usamos uma heurística que tenta devolver o máximo de entradas
-possível no entanto não fica muito tempo à espera de modo a conseguir todas a entradas possíveis (se existirem
-muitos pedidos simultâneos e todos fizerem isto, o que vai aconter é o servidor não conseguir dar resposta a ninguém
-e ficar muito lento), esta heurística também não se contenta apenas com uma resposta (caso só fosse devolvida uma entrada,
-na parte da interseção, a probabilidade de a mesma ser nula seria muito elevada). Com esta heurística conseguimos
-ter algum equilíbrio.
+This lock solution has a \textbf{trivial problem}: two clients can be dead locked with one
+single tuple item. To overcome this situation we use the following criteria to lock matched tuples:
+\begin{itemize}
+   \item Try to lock as many as possible the tuple items
+   \item If it is not possible to acquire the lock on a specific tuple just ignore that one
+   \item Return to the client's FE a list containing only lock-aquired tuple items
+\end{itemize}
+
+\textbf{Simple Deadlock problem:}
+Supose that two client $client1$,$client2$ request a $ Take(<cat, *>) $ :
+
+$ TupleSpace_{1} \leftarrow <dog, brown>, Locked_{client1}(<cat, white>), Locked{client2}(<cat, gray>) $
+
+$client1$ will wait to lock $<cat, gray>$ and vice-versa.
+
+\textbf{Our approach:}
+$ TupleSpace_{1} \leftarrow <dog, brown>, Locked_{client1}(<cat, white>), Locked{client2}(<cat, gray>) $
+
+$client1$ will return the list $<cat, white>$ and $client2$ will return the list $<cat, gray>$.
+
+If one of the clients returns a empty list then the \textbf{\textsc{Take} Phase 1} is repeated.
+
+If there are too many matching tuples in the tuple space and too many clients then
+%Esta foi a melhor solução encontrada, pois usamos uma heurística que tenta devolver o máximo de entradas
+%possível no entanto não fica muito tempo à espera de modo a conseguir todas a entradas possíveis (se existirem
+%muitos pedidos simultâneos e todos fizerem isto, o que vai aconter é o servidor não conseguir dar resposta a ninguém
+%e ficar muito lento), esta heurística também não se contenta apenas com uma resposta (caso só fosse devolvida uma entrada,
+%na parte da interseção, a probabilidade de a mesma ser nula seria muito elevada). Com esta heurística conseguimos
+%ter algum equilíbrio.
+
+
+
 
 
 \SubSection{Comparison}
 
-Para a operação Write é expectável que o XL a execute mais rapidamente.
-Para a operação de Read é expectável que ambas as implementações tenham um tempo de execução semelhante.
-Para a operação de Take se a máquina master tiver uma capacidade de processamente muito elevada (não entupir com
-um elevado número de pedidos), acabamos por conseguir ter tempos de resposta mais baixos pois não ficamos dependentes
-da operação de interseção, que pode falhar, tendo de ser repetido todo o processo.
+%Para a operação Write é expectável que o XL a execute mais rapidamente.
+%Para a operação de Read é expectável que ambas as implementações tenham um tempo de execução semelhante.
+%Para a operação de Take se a máquina master tiver uma capacidade de processamente muito elevada (não entupir com
+%um elevado número de pedidos), acabamos por conseguir ter tempos de resposta mais baixos pois não ficamos dependentes
+%da operação de interseção, que pode falhar, tendo de ser repetido todo o processo.
 
-\textsc{Write} operation in Xu and Liskov implementation tends to be faster than SMR. % vitor: explain why?
+\textsc{Write} operation in Xu and Liskov implementation tends to be faster than SMR, because doesn't exists a master
+that needs to retransmit all the requests to all the replicas.
 
 \textsc{Read} operation are supose to be very similar in performance as the system returns the first result to the client.
 
 %vitor: CHECK THIS
-\textsc{Take} operation on SMR tends to be more efficient than XL. Remeber that XL has 2 phase take operation with the overhead of intersection operation.
+\textsc{Take} operation on SMR tends to be more efficient than XL. This occurs because we do not depend from the result 
+of intersection operation, in which a request has a not so low probability of failing and being repeated. 
+We are considering that the master isn't the bottleneck of the system  
 
 
 \SubSection{Network congestion}
@@ -391,22 +418,26 @@ da operação de interseção, que pode falhar, tendo de ser repetido todo o pro
 When a client makes a request to a SMR system the client sends the request to all nodes because the master's identity is unknown.
 
 All secundary nodes discard the request imediately. The master node
-sends the request to the secundary nodes. For each client request only one request is useful, nodes keeps checking master liveliness every random seconds (between 3 and 10). Compararing with XL, SMR is more network intensive.
+sends the request to the secundary nodes. For each client request only one request is useful, nodes keeps checking master liveliness every random seconds (between 3 and 10). 
+Compararing with XL, SMR is more network intensive.
 
 \subsubsection{XL}
 
-No normal desenrolar do sistema, o pedido é propagado para todos os servidores na View do Front End do cliente, por norma os pedidos são feitos
-uma única vez. Exceptuando os casos em que por algum motivo a interseção na operação Take falha, ou quando um novo servidor entra no sistema e 
-o mesmo tem de parar para as Views serem atualizadas, pedidos enviados durante essa altura teem de ser repetidos.
+%No normal desenrolar do sistema, o pedido é propagado para todos os servidores na View do Front End do cliente, por norma os pedidos são feitos
+%uma única vez. Exceptuando os casos em que por algum motivo a interseção na operação Take falha, ou quando um novo servidor entra no sistema e 
+%o mesmo tem de parar para as Views serem atualizadas, pedidos enviados durante essa altura teem de ser repetidos.
 
-
+Following the normal flow of the system, the request is broadcasted to all the machines contained in the client front end view, normally the requests
+are broadcasted once. The excepetion is when for some reason, the take intersection operation fails, or when a new machine connects to the system and 
+the system needs to stop to update the Views. All the requests sent while the system is stopped need to be repeated.
 
 \subsubsection{Comparison}
 
-A implementação SMR congestiona muito mais a rede que a implementação XL. XL poderá congestionar mais a rede que o SMR no caso em que
-a View tenha de ser alterada, existam muitos pedidos a ser feitos e todos vão ter de ser repetidos. 
+%A implementação SMR congestiona muito mais a rede que a implementação XL. XL poderá congestionar mais a rede que o SMR no caso em que
+%a View tenha de ser alterada, existam muitos pedidos a ser feitos e todos vão ter de ser repetidos. 
 
-
+The SMR implementation congests much more the network then the XL implementation. The XL might congests more when the View needs to be updated while
+a lot of requests are occurring.
 
 \SubSection{Fault recovering}
 \subsubsection{SMR}
@@ -421,9 +452,11 @@ The leader with the smallest id is elected as the the new master.
 
 \subsubsection{XL}
 
-Quando alguns dos servidores crasha o sistema não para. Simplesmente quando um cliente deteta isso propaga a nova View para os servidores e 
-deixa de fazer pedidos a quem crashou.
+%Quando alguns dos servidores crasha o sistema não para. Simplesmente quando um cliente deteta isso propaga a nova View para os servidores e 
+%deixa de fazer pedidos a quem crashou.
 
+With this implementation when a server crashes, the system doesn't need to stop. The client just detects that a change occured in his view
+and broadcasts the new view to the servers.
 
 \subsubsection{Comparison}
 
