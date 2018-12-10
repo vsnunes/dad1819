@@ -11,6 +11,7 @@
 \usepackage{latex8}
 \usepackage[utf8]{inputenc}
 \usepackage{times}
+\usepackage{graphicx}
 
 %\documentstyle[times,art10,twocolumn,latex8]{article}
 
@@ -79,6 +80,12 @@ coordinate client's requests.
 %------------------------------------------------------------------------- 
 \Section{State Machine Replcation}
 
+\begin{figure}
+   \includegraphics[width=\linewidth]{smr_basic.png}
+   \caption{SMR basic communication schema}
+   \label{fig:smr_basic}
+ \end{figure}
+
 The State Machine Replication is based on primary backup approach. Given one
 primary and several secondary nodes, clients will perform requests to the
 primary node only.
@@ -97,6 +104,19 @@ simply discard the request.
 
 %------------------------------------------------------------------------- 
 \SubSection{Fault tolerance}
+
+\begin{figure}
+   \includegraphics[width=\linewidth]{smr_ping.png}
+   \caption{SMR master failure detector}
+   \label{fig:smr_ping}
+ \end{figure}
+
+ \begin{figure}
+   \includegraphics[width=\linewidth]{smr_master_recover.png}
+   \caption{SMR master failure and system's recovering process}
+   \label{fig:smr_master_recover}
+ \end{figure}
+
 This implementation has an obvious \textbf{week point}: if the master crashes 
 the system will stop repling to requests.
 Our solution to this problem consists of using an heartbeat that is sent from the
@@ -168,6 +188,19 @@ send requests to servers that are supose to be alive.
  
 \SubSection{Fault tolerance}
 
+
+\begin{figure}
+   \includegraphics[width=\linewidth]{xl_join1.png}
+   \caption{XL view update process}
+   \label{fig:xl_join1}
+ \end{figure}
+
+\begin{figure}
+   \includegraphics[width=\linewidth]{xl_join2.png}
+   \caption{XL tuple space recover}
+   \label{fig:xl_join2}
+ \end{figure}
+
 %Esta abordagem, ao não apresentar um master, tem a vantagem de que quando um nó crasha,
 %seja ele qual for, o sistema não precisa de parar. Isto é possível pois não existe uma
 %unidade central da qual todo o sistema dependa, e que caso a mesma crashe, todo o sistema 
@@ -214,12 +247,12 @@ The following steps are executed when a new node joins the system:
 \begin{itemize}
    \item New node starts up and for each path in file tries to update the view to inform his arrival
    \item As soon the already alive nodes receive a request to change the view they perform the request
-   immediately and \textbf{do not send the new view to the client.}
+   immediately and \textbf{do not send the new view to the client.} (Figure ~\ref{fig:xl_join1})
    \item All client's request are reject because the client view is out-of-date.
    \item New node request a copy of the tuple space to all already alive nodes.
    \item New node performs a tuple space intersection (see more in detail above) and propagates the changes
-   to all already alive nodes.
-   \item Only when the new tuple space is sent to all nodes then the client is informed of the new view.
+   to all already alive nodes. (Omitted on Figure ~\ref{fig:xl_join1} due to preserve draw simplicity)
+   \item Only when the new tuple space is sent to all nodes then the client is informed of the new view. (Figure ~\ref{fig:xl_join2})
    \item The client can resume the requests to all nodes.   
 \end{itemize}
 
@@ -250,7 +283,6 @@ request again, and because of this the tuple will be added again.
 
 This \textbf{garantees consistency} as the partial writes/takes will be discarded
 and repeated as complete write/takes operations!
-
 
 %------------------------------------------------------------------------- 
 \Section{Evaluation}
