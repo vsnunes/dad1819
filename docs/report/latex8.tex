@@ -399,29 +399,42 @@ No normal desenrolar do sistema, o pedido é propagado para todos os servidores 
 uma única vez. Exceptuando os casos em que por algum motivo a interseção na operação Take falha, ou quando um novo servidor entra no sistema e 
 o mesmo tem de parar para as Views serem atualizadas, pedidos enviados durante essa altura teem de ser repetidos.
 
+
+
 \subsubsection{Comparison}
 
 A implementação SMR congestiona muito mais a rede que a implementação XL. XL poderá congestionar mais a rede que o SMR no caso em que
 a View tenha de ser alterada, existam muitos pedidos a ser feitos e todos vão ter de ser repetidos. 
 
+
+
 \SubSection{Fault recovering}
 \subsubsection{SMR}
 
-No caso de existir um crash numa das réplicas, o sistema não fica comprometido e pode fluir normalmente. No caso de ser o master a crashar
-os pedidos dos clientes vão para um buffer e não são executados até um novo Master ser eleito. Para eleição do novo master é usado um algoritmo
-de leader election que escolhe a réplica que tenha um ID mais baixo.
+%No caso de existir um crash numa das réplicas, o sistema não fica comprometido e pode fluir normalmente. No caso de ser o master a crashar
+%os pedidos dos clientes vão para um buffer e não são executados até um novo Master ser eleito. Para eleição do novo master é usado um algoritmo
+%de leader election que escolhe a réplica que tenha um ID mais baixo.
+
+If a (secundary) node crashes then the system can continue to receive client's requests. Nevertheless when the master crashes, client request will be suspended until the new master election takes place.
+
+The leader with the smallest id is elected as the the new master.
 
 \subsubsection{XL}
 
 Quando alguns dos servidores crasha o sistema não para. Simplesmente quando um cliente deteta isso propaga a nova View para os servidores e 
 deixa de fazer pedidos a quem crashou.
 
+
 \subsubsection{Comparison}
 
-Para o SMR quando o Master crasha o sistema preciso de algum tempo para recuperar. Para o XL isso nunca acontece. Por outro lado no caso do XL,
-quando uma nova máquina se liga, o sistema tem de parar por causa da operação de interseção.
-Dependendo do sistema que se pretende implementar pode ser mais vantajosa uma ou outra abordagem. No caso em que novas máquinas se estejam sempre
-a ligar o SMR reage melhor, no caso em que existam crashs constantes o XL reage melhor porque não possui nenhuma unidade central de coordenação. 
+%Para o SMR quando o Master crasha o sistema preciso de algum tempo para recuperar. Para o XL isso nunca acontece. Por outro lado no caso do XL,
+%quando uma nova máquina se liga, o sistema tem de parar por causa da operação de interseção.
+%Dependendo do sistema que se pretende implementar pode ser mais vantajosa uma ou outra abordagem. No caso em que novas máquinas se estejam sempre
+%a ligar o SMR reage melhor, no caso em que existam crashs constantes o XL reage melhor porque não possui nenhuma unidade central de coordenação. 
+In the worst pitfall of SMR is recovering from a master failure. In the XL the worst pitfall is to add a new node to the system and compute an intersection.
+
+According to the context it is more reliable to choose an implementation wisely.
+
 
 \Section{Summary and conclusions}
 
@@ -447,6 +460,11 @@ quererem ligar-se ao sistema e caso alguma máquina crashe, o sistema não pode 
 utilização do XL, pois a rede não é tão congestionada e os pedidos são executados mais rapidamente. 
 -Sistema 2 -> Para uma arquiterura Peer to Peer, na qual novas máquinas estão sempre a existir vai ser mais lucrativo utilizar o SMR pois o sistema
 não bloqueia com a entrada de novos nós.
+
+Some context examples:
+\begin{itemize}
+	\item \textbf{Example 1:} Supose a limited sale system. In the final minutes is required that the system has a bigger throughput, and is very unlikely that new nodes will join the system. For this scenario a XL approach would be much more effective as the network bandwith is low in constract with SMR.
+\end{itemize}
 
 %------------------------------------------------------------------------- 
 \nocite{ex1,ex2}
