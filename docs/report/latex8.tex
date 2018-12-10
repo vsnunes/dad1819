@@ -44,11 +44,11 @@ Vítor Nunes\\
 
 \begin{abstract}
    In this project we will apply two different approaches to solve the problem of
-   having a distributed tupplespace. 
+   having a distributed tupple space. 
    These approaches have different tradeoffs considerations regarding time spent 
    executing a request, network congestion and time spent recovering from a fault.
    For this work we consider a perfect failure detector, in which if a server stop
-   responding to requests, then is because it crashed.   
+   responding to requests, then it's because it crashed.   
 \end{abstract}
 
 
@@ -59,12 +59,12 @@ Vítor Nunes\\
 %Please follow the steps outlined below when submitting your 
 %manuscript to the IEEE Computer Society Press. Note there have 
 %been some changes to the measurements from previous instructions.
-A tuple space consists in distributed collection of tuples. A tuple contains
-fields that are some how related.
+A tuple space consists in a distributed collection of tuples. A tuple contains
+fields that are somehow related.
 A basic tuple space needs to be writable, readable and deletable.
 
 \textbf{Challenges.} At a first glace seems easy to implement a tuple space
-in a distributed way however problems like consistency, data loss and 
+in a distributed way. However problems like consistency, data loss and 
 performance rise.
 
 To overcome this challenges we propose two diferent implementations of a 
@@ -88,8 +88,8 @@ coordinate clients requests.
 
 
 The State Machine Replication is based on a primary backup approach. Given one
-primary and several secondary nodes, clients will perform requests to the
-primary node only.
+primary and several secondary nodes, clients will perform requests only to the
+primary node.
 
 When the first server is switched on, we start by searching for alive servers
 requesting \textsc{AreYouTheMaster}. If no reply is given then the server
@@ -100,8 +100,8 @@ will receive the reply containing the URL path of the master.
 \SubSection{Clients request}
 
 In our solution when the client starts we begin with a list of all URL's servers,
-sends the request to all servers and only the leader will start processing, others
-simply discard the request.
+sends the request to all servers and only the leader will start processing, the others
+will simply discard the request.
 
 %------------------------------------------------------------------------- 
 \SubSection{Fault tolerance}
@@ -118,31 +118,31 @@ simply discard the request.
    \label{fig:smr_master_recover}
  \end{figure}
 
-This implementation has an obvious \textbf{week point}: if the master crashes 
-the system will stop repling to requests.
-Our solution to this problem consists of using an heartbeat that is sent from the
+This implementation has an obvious \textbf{weak point}: if the master crashes 
+the system will stop replying to requests.
+Our solution to this problem consists on using an heartbeat that is sent from the
 secondary nodes to the primary node every random seconds between 3 to 10 seconds.
 This ensures that in the worst case the system will take ten seconds to
 realise  (assuming instant propagation of messages). 
-The randomization process is used to optimize network bandwith and
+The randomization process is used to optimize network bandwidth and
 prevent heartbeats flooding on the master.
 
 Every node in the SMR contains an identifier. When a master crashes the remaining
-node with the smallest ID will be elected as the new master. It starts by informing
+nodes with the smallest ID will be elected as the new master. It starts by informing
 all secondary nodes about it's leadership change. By that time all secondary nodes
-start sending heartbeets to the new master.
+start sending heartbeats to the new master.
 
 Another problem is when a \textbf{secondary node crashes}. In this case the
 availability of the system is not affected since the primary node continues 
-to receive clients request. Nevertheless if that same node resurrects then it
+to receive client requests. Nevertheless if that same node resurrects then it
 will be unconsistent with others. To fix this problem, every node has a log.
 
 A log is used to keep track of every request made by the master 
 \textbf{that was already executed.} When a secondary node crashes and recovers
-it will have no such tuple in the tuple space, then request to the master
-a copy of his own log. The master suspend the clients requests processing and
+it will have no tuples in the tuple space and makes a request to the master for
+a copy of his own log. The master suspends the clients requests processing and
 replies to the new secondary node. As soon the new node is ready the master
-continues to processing client's request.
+continues processing client's request.
 
 
 %------------------------------------------------------------------------- 
@@ -174,8 +174,8 @@ to multiple nodes.
 %dos servidores, caso não esteja, é porque o sistema sofreu uma modificação e quando recuperar da mesma,
 %a nova é enviada ao cliente.
 
-In this approach, when a client wants to perform some operation, stats by creating
-a Front End. The client reads the servers URL path from the file and asks for
+In this approach, when a client wants to perform some operations, stats by creating
+a Front End. The client reads the servers URLs path from the file and asks for
 the view.
 
 When a request \textsc{Read}, \textsc{Write} or \textsc{Take} is sent to the servers,
@@ -190,7 +190,7 @@ most recent one. When a client starts up it gets one view from the server before
 making requests to it.
 
 The \textbf{biggest advantage} over our SMR implementation is that the client will only
-send requests to servers that are supose to be alive.
+send requests to servers that are supposed to be alive.
 
 %------------------------------------------------------------------------- 
  
@@ -215,7 +215,7 @@ send requests to servers that are supose to be alive.
 %é comprometido.
 
 This approach has an advantage of time in recovering, this happens because when
-a node crashes the system don't need to stop. There are no coordinator node
+a node crashes the system doesn't need to stop. There is no coordinator node
 (a central point of failure) that could compromise the system availability.
 
 %Apresenta uma desvantagem em relação ao SMR que é a de precisar de parar o sistema por 
@@ -223,15 +223,15 @@ a node crashes the system don't need to stop. There are no coordinator node
 %de ser atualizadas para passar a conter o novo nó, e não se podem perder pedidos que
 %estejam a ser feitos enquanto as Views são atualizadas.
 
-However has the following \textbf{pitfall}: when a new node joins it is necessary
-to pause the entire system to performe a view update in order to ensure consistency
-and garantee that the clients request during the view update will not disapear.
+However it has the following \textbf{pitfall}: when a new node joins it is necessary
+to pause the entire system to perform a view update in order to ensure consistency
+and guarantee that the clients requests during the view update will not disappear.
 
 The following steps are executed when a node crashes:
 \begin{itemize}
-   \item Client suspend all requests
-   \item Client detects the crash and inform all other view members
-   \item Client resume the requests
+   \item Client suspends all requests
+   \item Client detects the crash and informs all other view members
+   \item Client resumes the requests
 \end{itemize}
 
 %Quando um nó crasha o cliente vai atualizar a sua view, e informar todos os seus membros
@@ -253,21 +253,21 @@ The following steps are executed when a node crashes:
 
 The following steps are executed when a new node joins the system:
 \begin{itemize}
-   \item New node starts up and for each path in the file tries to update it view informing his arrival
+   \item New node starts up and for each path in the file tries to update its view informing his arrival
    \item As soon as the alive nodes receive a request to change the view they perform the request
    immediately and \textbf{do not send the new view to the client.} (Figure ~\ref{fig:xl_join1})
-   \item All client's request are rejectes because the client view is out-of-date.
+   \item All client's request are rejected because the client view is out-of-date.
    \item New node requests a copy of the tuple space to all already alive nodes.
    \item New node performs a tuple space intersection (see more in detail above) and propagates the changes
-   to all alive nodes. (Omitted on Figure ~\ref{fig:xl_join1} due to preserve draw simplicity)
-   \item Only when the new tuple space is sent to all nodes then the client is informed of the new view. (Figure ~\ref{fig:xl_join2})
+   to all alive nodes. (Omitted on Figure ~\ref{fig:xl_join1} to preserve draw simplicity)
+   \item Only when the new tuple space is sent to all nodes the client is informed of the new view. (Figure ~\ref{fig:xl_join2})
    \item The client can repeat the requests to all nodes.   
 \end{itemize}
 
-\textbf{Tuple Space Intersection:} We defined a intersection of tuple space as the set of tuples
+\textbf{Tuple Space Intersection:} We defined a intersection of tuple spaces as the set of tuples
 that belongs to both tuple spaces.
 
-Let's supose, for example that we have \textbf{2 nodes alive} and a new node joins the system.
+Let's suppose, for example that we have \textbf{2 nodes alive} and a new node joins the system.
 The following schema shows the tuple space content of each node:
 
 $ TupleSpace_{1} \leftarrow <dog, brown>, <cat, white>, <cat, gray> $
@@ -276,21 +276,21 @@ $ TupleSpace_{2} \leftarrow <dog, brown>, <cat, white>, <cat, gray>, <horse, whi
 
 $ TupleSpace_{3} \leftarrow \emptyset $
 
-A closer look to $TupleSpace_{2}$ shows a partial write operation, this is
+A closer look to $TupleSpace_{2}$ shows a partial write operation, 
 the client's front end wrote on node 2 but lost his view and therefore couldn't write on other nodes.
 
-Remember that node 3 will request all tuples spaces (from node 1 and 2) and perform a intersection, this is:
+Remember that node 3 will request all tuples spaces (from node 1 and 2) and perform an intersection, this is:
 
 $ TupleSpace_{3} \leftarrow TupleSpace_{1} \cup TupleSpace_{2} $
 
 $ TupleSpace_{3} \leftarrow <dog, brown>, <cat, white>, <cat, gray>$
 
-At a first glance seams like the new tuple $<horse, white>$ has been lost due 
+At a first glance seems like the new tuple $<horse, white>$ has been lost due 
 to the expiration of the view. Nevertheless the client needs to perform the 
-request again, and because of this the tuple will be added again.
+requests again, and because of this the tuple will be added again.
 
-This \textbf{garantees consistency} as the partial writes/takes will be discarded
-and repeated as complete write/takes operations!
+This \textbf{guarantees consistency} as the partial writes/takes will be discarded
+and repeated as complete write/takes operations.
 
 %------------------------------------------------------------------------- 
 \Section{Evaluation}
@@ -298,7 +298,7 @@ and repeated as complete write/takes operations!
 %a alguns pontos chaves. Apresentamos ainda a justificação para algumas escolhas que
 %tiveram de ser feitas.
 
-In this section we will study how these approachs (SMR and XL) performs in some metrics.
+In this section we will study how these approaches (SMR and XL) performs in some metrics.
 We still present some justifications about concrete implementation aspects.
 
 \SubSection{Requests execution}
@@ -311,15 +311,15 @@ We still present some justifications about concrete implementation aspects.
 %por um intermediário.
 
 For \textsc{Take} and \textsc{Write} operations it is necessary that the master receives the requests
-and then propagates it tho secondary nodes. The biggest disadvantage of this approach is the extra
-load that a master needs to handle, this is the clients and nodes requests/replies and even heartbeets.
+and then propagates them to the secondary nodes. The biggest disadvantage of this approach is the extra
+load that a master needs to handle, like clients and nodes requests/replies and even heartbeats.
 
 %Na operação de Read os pedidos não são propagados pera as réplicas, devolvendo o master 
 %instantâneamente a resposta ao cliente, caso seja possível (Take e Read são operações bloquentas, 
 %para ser dada uma resposta é preciso que a mesma conste nos espaços de tuplos).
 
 \textsc{Read} requests are the only type of client request that the master won't propagate to other nodes.
-As soon the master receives the \textsc{Read} it respondes immediately to the client.
+As soon the master receives the \textsc{Read} it responds immediately to the client.
 
 
 \subsubsection{XL}
@@ -334,11 +334,11 @@ As soon the master receives the \textsc{Read} it respondes immediately to the cl
 %sao devolvidas ao front end, em seguida o front end vai intersetar os conjuntos que recebeu dos vários
 %servidores e vai escolher um elemento comum a todos esses conjuntos e remove-lo, devolvendo ao cliente.
 
-For the \textsc{Write} operation the client's front end propagate the request to all alive servers.
+For the \textsc{Write} operation the client's front end propagates the request to all alive servers.
 
 The \textsc{Read} operation is performed by the front end and returns to the client the first response it gets.
 
-The \textsc{Take} operation is a little bit more tricky, in the sense that has two phases:
+The \textsc{Take} operation is a little bit more tricky, in the sense that it has two phases:
 
 \textbf{\textsc{Take} Phase 1}
 \begin{itemize}
@@ -363,7 +363,7 @@ Every tuple can only be locked to a user at the same time.
 This lock solution has a \textbf{trivial problem}: two clients can be dead locked with one
 single tuple item. To overcome this situation we use the following criteria to lock matched tuples:
 \begin{itemize}
-   \item Try to lock as many as possible tuple items
+   \item Try to lock as many tuple items as possible
    \item If it is not possible to acquire the lock on a specific tuple just ignore that one
    \item Return to the client's FE a list containing only lock-aquired tuple items
 \end{itemize}
@@ -371,12 +371,12 @@ single tuple item. To overcome this situation we use the following criteria to l
 \textbf{Simple Deadlock problem:}
 Supose that two client $client1$,$client2$ request a $ Take(<cat, *>) $ :
 
-$ TupleSpace_{1} \leftarrow <dog, brown>, Locked_{client1}(<cat, white>), Locked{client2}(<cat, gray>) $
+$ TupleSpace_{1} \leftarrow <dog, brown>, Locked_{client1}(<cat, white>), Locked_{client2}(<cat, gray>) $
 
 $client1$ will wait to lock $<cat, gray>$ and vice-versa.
 
 \textbf{Our approach:}
-$ TupleSpace_{1} \leftarrow <dog, brown>, Locked_{client1}(<cat, white>), Locked{client2}(<cat, gray>) $
+$ TupleSpace_{1} \leftarrow <dog, brown>, Locked_{client1}(<cat, white>), Locked_{client2}(<cat, gray>) $
 
 $client1$ will return the list $<cat, white>$ and $client2$ will return the list $<cat, gray>$.
 
@@ -403,15 +403,15 @@ of having an empty list, i.e, no unlocked matching tuples are available is high.
 %um elevado número de pedidos), acabamos por conseguir ter tempos de resposta mais baixos pois não ficamos dependentes
 %da operação de interseção, que pode falhar, tendo de ser repetido todo o processo.
 
-\textsc{Write} operation in Xu and Liskov implementation tends to be faster than SMR, because doesn't exists a master
+\textsc{Write} operation in Xu and Liskov implementation tends to be faster than SMR, because it doesn't exist a master
 that needs to retransmit all the requests to all the replicas.
 
-\textsc{Read} operation are supose to be very similar in performance as the system returns the first result to the client.
+\textsc{Read} operations are supposed to be similar in performance as the system returns the first result to the client.
 
 %vitor: CHECK THIS
-\textsc{Take} operation on SMR tends to be more efficient than XL. This occurs because we do not depend from the result 
+\textsc{Take} operation on SMR tends to be more efficient than XL. This occurs because we do not depend on the result 
 of intersection operation, in which a request has a not so low probability of failing and being repeated. 
-We are considering that the master isn't the bottleneck of the system  
+We are considering that the master isn't the bottleneck of the system.  
 
 
 \SubSection{Network congestion}
@@ -424,8 +424,8 @@ We are considering that the master isn't the bottleneck of the system
 
 When a client makes a request to a SMR system the client sends the request to all nodes because the master's identity is unknown.
 
-All secundary nodes discard the request imediately. The master node
-sends the request to the secundary nodes. For each client request only one request is useful, nodes keep checking master's liveliness every random seconds (between 3 and 10). 
+All secondary nodes discard the request immediately. The master node
+sends the request to the secondary nodes. For each client request only one request is useful, nodes keep checking master's liveliness every random seconds (between 3 and 10). 
 Compararing with XL, SMR is more network intensive.
 
 \subsubsection{XL}
@@ -456,7 +456,7 @@ a lot of requests are occurring.
 If a (secondary) node crashes then the system can continue to receive client's requests. Nevertheless when the master crashes, client request will be
 suspended until the new master election takes place.
 
-The leader with the smallest id is elected as the the new master.
+The node with the smallest id is elected as the the new master.
 
 \subsubsection{XL}
 
@@ -493,7 +493,7 @@ In the SMR implementation we didn't use Views, leading to a latency growth betwe
 This occurs because we need to check the availability of all servers contained in the servers file, which contains both the alive and death 
 servers. One further modification to ours SMR implementation is to apply Views like the ones used in XL. 
 Another problem that should be fixed in SMR is the one regarding the constant messages exchange from all Replicas to the Master.
-It's not possible to say which implementation is better, it is necessary do read carefully the evaluation topics written in the previous section,
+It's not possible to say which implementation is better, it is necessary to read carefully the evaluation topics written in the previous section,
 and based on which are the the requirements for the new system, make a decision.
 
 %Alguns cenários exemplificativos:
