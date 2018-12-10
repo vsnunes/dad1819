@@ -147,10 +147,13 @@ continues to processing client's request.
 %------------------------------------------------------------------------- 
 \Section{Xu and Liskov}
 
-De acordo com esta implementação já não se recorre a um master que garante a 
-consistência do sistema coordenando todos os pedidos. Em vez disso,
-cada Front end de cada cliente vai propagar o pedido para todos os servidores vivos,
-e cada um desses servidores vai tratar de o executar.
+%De acordo com esta implementação já não se recorre a um master que garante a 
+%consistência do sistema coordenando todos os pedidos. Em vez disso,
+%cada Front end de cada cliente vai propagar o pedido para todos os servidores vivos,
+%e cada um desses servidores vai tratar de o executar.
+
+In this implementation we no longer need one master to ensure the consistency of the system. Instead we introduce the concept of client's front end and the concept of view.
+
 A Client's Front End is an interface to coordinate request to all nodes and made
 them transparent to the user. For example, user invoke Front End's take operation
 and FE is responsible for getting the current view and propagate the request
@@ -226,8 +229,8 @@ The following steps are executed when a node crashes:
    \item Client resume the requests
 \end{itemize}
 
-Quando um nó crasha o cliente vai atualizar a sua view, e informar todos os seus membros
-para atualizarem a deles.
+%Quando um nó crasha o cliente vai atualizar a sua view, e informar todos os seus membros
+%para atualizarem a deles.
 
 
 %Quando um nó rescuscita, vai começar por informar todas as máquinas vivas de que precisa
@@ -246,7 +249,7 @@ para atualizarem a deles.
 The following steps are executed when a new node joins the system:
 \begin{itemize}
    \item New node starts up and for each path in file tries to update the view to inform his arrival
-   \item As soon the already alive nodes receive a request to change the view they perform the request
+   \item As soon as the already alive nodes receive a request to change the view they perform the request
    immediately and \textbf{do not send the new view to the client.} (Figure ~\ref{fig:xl_join1})
    \item All client's request are reject because the client view is out-of-date.
    \item New node request a copy of the tuple space to all already alive nodes.
@@ -369,14 +372,27 @@ Para a operação de Take se a máquina master tiver uma capacidade de processam
 um elevado número de pedidos), acabamos por conseguir ter tempos de resposta mais baixos pois não ficamos dependentes
 da operação de interseção, que pode falhar, tendo de ser repetido todo o processo.
 
+\textsc{Write} operation in Xu and Liskov implementation tends to be faster than SMR. % vitor: explain why?
+
+\textsc{Read} operation are supose to be very similar in performance as the system returns the first result to the client.
+
+%vitor: CHECK THIS
+\textsc{Take} operation on SMR tends to be more efficient than XL. Remeber that XL has 2 phase take operation with the overhead of intersection operation.
+
+
 \SubSection{Network congestion}
 \subsubsection{SMR}
 
-Quando é feito um pedido de execução de uma operação, este é propagado para todos os servidores. Aqueles que são réplicas
-ignoram o pedido (só executam pedidos do master), o master quando recebe vai propagá-lo para as réplicas. A juntar a isto 
-temos ainda mensagens a serem trocadas a cada 3 a 10 segundos de cada uma das réplicas para o master, para verificar se o mesmo
-não crashou.
- 
+%Quando é feito um pedido de execução de uma operação, este é propagado para todos os servidores. Aqueles que são réplicas
+%ignoram o pedido (só executam pedidos do master), o master quando recebe vai propagá-lo para as réplicas. A juntar a isto 
+%temos ainda mensagens a serem trocadas a cada 3 a 10 segundos de cada uma das réplicas para o master, para verificar se o mesmo
+%não crashou.
+
+When a client makes a request to a SMR system the client sends the request to all nodes because the master's identity is unknown.
+
+All secundary nodes discard the request imediately. The master node
+sends the request to the secundary nodes. For each client request only one request is useful, nodes keeps checking master liveliness every random seconds (between 3 and 10). Compararing with XL, SMR is more network intensive.
+
 \subsubsection{XL}
 
 No normal desenrolar do sistema, o pedido é propagado para todos os servidores na View do Front End do cliente, por norma os pedidos são feitos
