@@ -6,11 +6,21 @@ using System.Text.RegularExpressions;
 
 namespace DIDA_LIBRARY
 {
+    /// <summary>
+    /// A Class for describing the Tuple Item.
+    /// </summary>
     [Serializable]
     public class Tuple
     {
+        /// <summary>
+        /// List of tuple fields
+        /// </summary>
         private List<Object> _fields;
 
+        /// <summary>
+        /// The status of a tuple.
+        /// It can be locked because of some tuple space operation.
+        /// </summary>
         public bool Locker;
 
 
@@ -64,6 +74,12 @@ namespace DIDA_LIBRARY
             return _types;
         }
 
+        /// <summary>
+        /// Allow comparation using String WildCards Only.
+        /// </summary>
+        /// <param name="s1"></param>
+        /// <param name="s2"></param>
+        /// <returns>True if the two string matches the wildcards criteria.</returns>
         private bool WildComparator(string s1, string s2)
         {
             
@@ -85,24 +101,39 @@ namespace DIDA_LIBRARY
             return s1.Equals(s2);
         }
 
+        /// <summary>
+        /// Allow comparation using String WildCards with object elements.
+        /// </summary>
+        /// <param name="s1">The Wildcard</param>
+        /// <param name="s2">The object to be compared</param>
+        /// <returns>True if the object matches the wildcard string criteria.</returns>
         private bool WildComparator(string s1, object s2)
         {
             string s2Name = s2.GetType().Name;
             return s1 == s2Name; //WildComparator(s1.TrimStart('"').TrimEnd('"'), s2Name);
         }
 
+        /// <summary>
+        /// Given two tuples check if they are equals.
+        /// Be aware that Equals support all WildCards operations. So <"dog", "*"> is equal to <"dog", "brown">.
+        /// </summary>
+        /// <param name="obj">An object of type Tuple to compare</param>
+        /// <returns>True if the two objects are the same (or wild-identical). False otherwise. </returns>
         public override bool Equals(object obj)
         {
+            //If other than Tuple object is given return false immediately
             if (obj.GetType() == this.GetType())
             {
 
                 Tuple tuple = obj as Tuple;
+                // 1 -> Starts by comparing the number of fields of two tuples
                 int numberOfFields = this.GetNumberOfFields();
                 if (tuple.GetNumberOfFields() == numberOfFields)
                 {
                     List<Object> otherObjects = tuple.GetAllFields();
                     for (int i = 0; i < numberOfFields; i++)
                     {
+                        // 2 -> Compare the types of the fields.
                         //When tuple fields are string instead of calling equals method call the wildcomparator
                         //to check for wildcards in strings
                         if (tuple.GetFieldByNumber(i).GetType() == typeof(string))
@@ -118,7 +149,8 @@ namespace DIDA_LIBRARY
                             else if (WildComparator(tuple.GetFieldByNumber(i) as string, this.GetFieldByNumber(i) as string) == false)
                                 return false;
                         }
-
+                        // 3 -> Cross comparation
+                        // Wild card can be on this object or on obj argument
                         else if (this.GetFieldByNumber(i).GetType() == typeof(string))
                         {
                             if (tuple.GetFieldByNumber(i) == null) return false;
@@ -145,6 +177,10 @@ namespace DIDA_LIBRARY
             return false;
         }
     
+        /// <summary>
+        /// Textual representation of a Tuple
+        /// </summary>
+        /// <returns>A string like: <"Field1", "Field2", "..." ></returns>
         public override string ToString()
         {
             string repr = "<" ;

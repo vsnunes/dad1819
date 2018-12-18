@@ -43,10 +43,23 @@ namespace DIDA_LIBRARY
         /// <param name="tuple"></param>
         void remove(Tuple tuple, int workerId);
 
+        /// <summary>
+        /// Removes a URL (machine) from my view
+        /// </summary>
+        /// <param name="url">The URL of the machine to be removed.</param>
+        /// <returns>The new view whose URL (machine) no longer belongs.</returns>
         View Remove(string url);
 
+        /// <summary>
+        /// Returns my current view
+        /// </summary>
+        /// <returns>View structure</returns>
         View GetActualView();
 
+        /// <summary>
+        /// Display the status of the server.
+        /// It contains the alive node and the dead.
+        /// </summary>
         void Status();
         
         void Freeze();
@@ -55,6 +68,10 @@ namespace DIDA_LIBRARY
 
         void Crash();
 
+        /// <summary>
+        /// Forces the server to check liveliness of all members of the view and
+        /// remove those who are not alive.
+        /// </summary>
         void checkView();
 
     }

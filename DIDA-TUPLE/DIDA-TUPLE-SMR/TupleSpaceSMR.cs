@@ -10,26 +10,55 @@ namespace DIDA_TUPLE_SMR
 {
     public class TupleSpaceSMR : MarshalByRefObject, ITupleSpace, ITotalOrder
     {
+        /// <summary>
+        /// DEBUG PM: Min Delay allowed
+        /// </summary>
         private int _minDelay = 0;
+
+        /// <summary>
+        /// DEBUG PM: Max Delay allowed
+        /// </summary>
         private int _maxDelay = 0;
 
-        //Possibilidade de hashtable
+        /// <summary>
+        /// The Tuple space complex structure :)
+        /// </summary>
         private List<Tuple> _tupleSpace;
 
-        /** Unique identifier of the server **/
+        /// <summary>
+        /// Unique identifier of the server.
+        /// </summary>
         private int _serverId;
 
+        /// <summary>
+        /// PuppetMaster Lock
+        /// </summary>
         private object PMLock = new object();
+
+        /// <summary>
+        /// Soft Lock: only locks basic Tuple Space Operations (aka Read, Write and Take)
+        /// It does not lock ping, and areYouTheMaster.
+        /// </summary>
         private object SoftLock = new object();
+
+        /// <summary>
+        /// View Change Lock. #DOUBT#
+        /// </summary>
         private object VCLock = new object();
         
-        /** Complete freeze **/
+        /// <summary>
+        /// Complete freeze (is a more embrancing than the Soft Freeze)
+        /// </summary>
         private static bool freeze = false;
 
-        /** Soft freeze: only operation except ping and areYouTheMaster **/
+        /// <summary>
+        /// Status of softFreeze operations.
+        /// </summary>
         private static bool softFreeze = false;
 
-
+        /// <summary>
+        /// The current view
+        /// </summary>
         private View _view;
 
         /// <summary>
@@ -45,6 +74,9 @@ namespace DIDA_TUPLE_SMR
         /// </summary>
         public enum Type { NORMAL, MASTER };
 
+        /// <summary>
+        /// The URL (path) to the master
+        /// </summary>
         private string _masterPath;
 
         private List<string> _servers;
@@ -61,6 +93,9 @@ namespace DIDA_TUPLE_SMR
         /// </summary>
         private string _backup;
 
+        /// <summary>
+        /// Master remote object. !Bad name!
+        /// </summary>
         private TupleSpaceSMR _replic;
 
         private string _myPath;
@@ -155,6 +190,9 @@ namespace DIDA_TUPLE_SMR
             return _serverId;
         }
 
+        /// <summary>
+        /// Executes all operation on the current Log.
+        /// </summary>
         public void executeLog(){
             List<Request> _requests = new List<Request>();
             _requests = _log.Requests;
@@ -162,10 +200,12 @@ namespace DIDA_TUPLE_SMR
             foreach(Request request in _requests){
                 if(request.OperationId == Request.OperationType.WRITE)
                 {
+                    //Disable log write (false) --> already in log
                     executeWrite(request.Tuple, false);
                 }
                 else if(request.OperationId == Request.OperationType.TAKE)
                 {
+                    //Disable log write (false) --> already in log
                     executeTake(request.Tuple, false);
                 }
             }
@@ -216,6 +256,12 @@ namespace DIDA_TUPLE_SMR
 
         }
 
+        /// <summary>
+        /// Performs the take effectively.
+        /// </summary>
+        /// <param name="tuple">The tuple to be taken.</param>
+        /// <param name="writeOnLog">By default always record on Log</param>
+        /// <returns></returns>
         private Tuple executeTake(Tuple tuple, bool writeOnLog=true){
             Tuple result = null;
             while (result == null)
@@ -292,6 +338,11 @@ namespace DIDA_TUPLE_SMR
             }
         }
 
+        /// <summary>
+        /// Writes a tuple effectively on the tuple space.
+        /// </summary>
+        /// <param name="tuple">A tuple to be written</param>
+        /// <param name="writeOnLog">By default always record on Log</param>
         private void executeWrite(Tuple tuple, bool writeOnLog=true)
         {
             //If any thread is waiting for read or take
@@ -336,6 +387,11 @@ namespace DIDA_TUPLE_SMR
                 }
         }
 
+        /// <summary>
+        /// Asks the replic of who is the master
+        /// </summary>
+        /// <param name="serverPath">The URL of who asks.</param>
+        /// <returns></returns>
         public bool areYouTheMaster(string serverPath) {
             //Checks if the server is freezed
             lock (PMLock)
@@ -348,6 +404,10 @@ namespace DIDA_TUPLE_SMR
             return _type == Type.MASTER;
         }
 
+        /// <summary>
+        /// Sets a new path to the new master.
+        /// </summary>
+        /// <param name="pathNewMaster">The URL of the new master.</param>
         public void setNewMaster(string pathNewMaster)
         {
             //Checks if the server is freezed
@@ -362,8 +422,15 @@ namespace DIDA_TUPLE_SMR
             setBackup(_masterPath);
         }
 
+        /// <summary>
+        /// Elect me as the master
+        /// </summary>
         public void setIAmTheMaster() { _type = Type.MASTER; }
 
+        /// <summary>
+        /// Set i'm the backup of the master
+        /// </summary>
+        /// <param name="path">The master path who i need to perform the backup</param>
         public void setBackup(string path) {
 
             //Backup will store the path to the master.

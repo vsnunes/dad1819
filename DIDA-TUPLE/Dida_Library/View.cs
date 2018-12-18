@@ -14,11 +14,17 @@ namespace DIDA_LIBRARY
     [Serializable]
     public class View
     {
-
+        /// <summary>
+        /// Path of all members of the view
+        /// </summary>
         private List<String> _servers;
 
         private static readonly object padlock = new object();
 
+        /// <summary>
+        /// The version of the view. This allows to compare to views
+        /// and discoverd the most recent view (bigger version)
+        /// </summary>
         private int version = 0;
 
         public View()

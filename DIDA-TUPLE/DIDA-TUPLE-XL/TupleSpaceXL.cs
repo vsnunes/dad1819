@@ -8,24 +8,58 @@ using System.IO;
 
 namespace DIDA_TUPLE_XL
 {
+    /// <summary>
+    /// Tuple Space approach using Xu and Liskov implementation
+    /// </summary>
     public class TupleSpaceXL : MarshalByRefObject, ITupleSpaceXL
     {
+        /// <summary>
+        /// DEBUG PM: Min Delay allowed
+        /// </summary>
         private int _minDelay;
+
+        /// <summary>
+        /// DEBUG PM: Max Delay allowed
+        /// </summary>
         private int _maxDelay;
+
+        /// <summary>
+        /// Is the server freeze?
+        /// </summary>
         private static bool freeze = false;
+
+        /// <summary>
+        /// The Tuple space complex structure :)
+        /// </summary>
         private List<Tuple> _tupleSpace;
 
         //quem atualiza a view sao os servidores, quem faz get da view atual sao os workers
         private View _view;
 
+        /// <summary>
+        /// A list containing which tuples are locked and what is the client ID that locked them.
+        /// </summary>
         private static LockList _lockList;
 
+        /// <summary>
+        /// A list of all possible servers (including the alive and dead ones).
+        /// </summary>
         private List<string> serverList = new List<string>();
 
+        /// <summary>
+        /// My current path
+        /// </summary>
         private string myPath;
 
+        /// <summary>
+        /// The status of update process.
+        /// Remember that the Update Process is ON when a new server joins the view.
+        /// </summary>
         public bool onUpdate = false;
 
+        /// <summary>
+        /// A Lock that prevents client from receiving the new view when are in the "middle" of a write/take operation.
+        /// </summary>
         public static readonly Object onUpdateLock = new Object();
 
         public TupleSpaceXL(String path)
@@ -100,6 +134,7 @@ namespace DIDA_TUPLE_XL
                     }
                 }
             }
+            //Already have the new tuple space. Update process is now complete. Inform the clients of the new view.
             this.SetOnUpdate(false);
 
             //If no one replies to the view then i create my own view
@@ -110,6 +145,12 @@ namespace DIDA_TUPLE_XL
             }
         }
 
+        /// <summary>
+        /// Sets On Update Process.
+        /// This happens when a new server joins the view.
+        /// This causes the client to be paused waiting for the new server recovering process
+        /// </summary>
+        /// <param name="v"></param>
         public void SetOnUpdate(bool v)
         {
             lock (onUpdateLock)
@@ -173,6 +214,11 @@ namespace DIDA_TUPLE_XL
             return result;
         }
 
+        /// <summary>
+        /// Removes a tuple from the tuple space. This is take PHASE 2.
+        /// </summary>
+        /// <param name="tuple">The tuple to be removed</param>
+        /// <param name="workerId">The client front end ID.</param>
         public void remove(Tuple tuple, int workerId)
         {
             if (tuple == null)
@@ -205,13 +251,17 @@ namespace DIDA_TUPLE_XL
 
         }
 
+        /// <summary>
+        /// Returns the number of tuples in the tuple space.
+        /// </summary>
+        /// <returns></returns>
         public int ItemCount()
         {
             return _tupleSpace.Count();
         }
 
         /// <summary>
-        /// Takes a tuple from the tuple space.
+        /// Takes a tuple from the tuple space. This is only the TAKE PHASE 1
         /// </summary>
         /// <param name="tuple">The tuple to be taken.</param>
         /// <returns></returns>
@@ -330,6 +380,10 @@ namespace DIDA_TUPLE_XL
             System.Environment.Exit(0);
         }
 
+        /// <summary>
+        /// Forces the server to check liveliness of all members of the view and remove
+        /// those that are dead.
+        /// </summary>
         public void checkView()
         {
             List<string> servers = _view.Servers.ToList();
@@ -351,6 +405,9 @@ namespace DIDA_TUPLE_XL
             }
         }
 
+        /// <summary>
+        /// Displays the server alive nodes and dead ones.
+        /// </summary>
         public void Status()
         {
             Console.WriteLine("My actual view:");
@@ -379,6 +436,11 @@ namespace DIDA_TUPLE_XL
             }
         }
 
+        /// <summary>
+        /// Adds a new URL (machine) to the view.
+        /// </summary>
+        /// <param name="url">The URL of the machine to be added.</param>
+        /// <returns>The new view containing the new machine.</returns>
         public View AddView(string url)
         {
             _view.Add(url);
@@ -388,6 +450,11 @@ namespace DIDA_TUPLE_XL
 
         }
 
+        /// <summary>
+        /// Removes a server from the view and propagate those changes to other members of the view
+        /// </summary>
+        /// <param name="url">The URL (machine) to be removed from the View</param>
+        /// <returns>The new view without the machine removed.</returns>
         public View Remove(string url)
         {
             this.RemoveFromView(url);
@@ -404,6 +471,11 @@ namespace DIDA_TUPLE_XL
             return _view;
         }
 
+        /// <summary>
+        /// Only removes the URL (machine) from our view BUT DO NOT PROPAGATE those changes to other members.
+        /// </summary>
+        /// <param name="url">The URL (machine) to be removed from the View</param>
+        /// <returns>The new view without the machine removed</returns>
         public View RemoveFromView(string url)
         {
             if (_view.Servers.Contains(url))
@@ -413,11 +485,19 @@ namespace DIDA_TUPLE_XL
             return _view;
         }
 
+        /// <summary>
+        /// Returns the tuple space
+        /// </summary>
+        /// <returns>A complex structure of a tuple space</returns>
         public List<Tuple> GetTupleSpace()
         {
             return _tupleSpace;
         }
 
+        /// <summary>
+        /// Returns the current view of the server
+        /// </summary>
+        /// <returns>A view structure representing current view.</returns>
         public View GetActualView()
         {
             lock (onUpdateLock)
@@ -430,6 +510,11 @@ namespace DIDA_TUPLE_XL
             return _view;
         }
 
+        /// <summary>
+        /// Given a set of Tuples returns a intersection of those tuples.
+        /// </summary>
+        /// <param name="list">A List of list of tuples to intersect</param>
+        /// <returns>A list of tuples corresponding to the intersection of tuples.</returns>
         public IEnumerable<Tuple> Intersection(List<List<Tuple>> list)
         {
             if (list.Count == 0)

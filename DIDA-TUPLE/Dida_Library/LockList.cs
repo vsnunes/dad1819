@@ -8,6 +8,10 @@ namespace DIDA_LIBRARY
     /// </summary>
     public class LockList
     {
+        /// <summary>
+        /// Dictionary containing the client front end ID as the key
+        /// and a List of Locked Tuples by that client as the value.
+        /// </summary>
         private Dictionary<int, List<Tuple>> _lockList;
 
         public LockList()
@@ -59,6 +63,11 @@ namespace DIDA_LIBRARY
             _lockList.Remove(workerId);
         }
 
+        /// <summary>
+        /// Given a tuple checks if the tuple is locked
+        /// </summary>
+        /// <param name="tuple">The tuple to be checked</param>
+        /// <returns>True if the tuple is locked, false otherwise.</returns>
         public bool CheckTupleLock(Tuple tuple)
         {
             bool result = false;
